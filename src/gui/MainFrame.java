@@ -126,6 +126,10 @@ public class MainFrame extends JFrame {
         contentPanel.add(new DiemDanhPanel(), "DiemDanh");
         contentPanel.add(new DonXinPhepPanel(), "XinPhep");
         contentPanel.add(new TongHopCongPanel(), "TongHopCong");
+        contentPanel.add(new LuongCoBanPanel(), "LuongCoBan");
+        contentPanel.add(new KhauTruPanel(), "KhauTru");
+        contentPanel.add(new TinhLuongPanel(), "TinhLuong");
+        contentPanel.add(new XuatLuongPanel(), "XuatLuong");
         contentPanel.add(createPlaceholderPanel("Chức năng đang được phát triển..."), "Placeholder");
 
         cardLayout.show(contentPanel, "Employees");
@@ -211,7 +215,8 @@ public class MainFrame extends JFrame {
             btn.setForeground(Color.WHITE);
 
             if (cardName.equals("Employees") || cardName.equals("PhongBan") || cardName.equals("ChucVu") ||
-                cardName.equals("DiemDanh") || cardName.equals("XinPhep") || cardName.equals("TongHopCong")) {
+                cardName.equals("DiemDanh") || cardName.equals("XinPhep") || cardName.equals("TongHopCong") ||
+                cardName.equals("LuongCoBan") || cardName.equals("KhauTru") || cardName.equals("TinhLuong") || cardName.equals("XuatLuong")) {
                 cardLayout.show(contentPanel, cardName);
             } else {
                 cardLayout.show(contentPanel, "Placeholder");

@@ -45,7 +45,8 @@ public class PhongBanPanel extends JPanel {
         headerPanel.add(cardsPanel, BorderLayout.CENTER);
 
         // Toolbar
-        JPanel toolbarPanel = new JPanel(new BorderLayout());
+        JPanel toolbarPanel = new JPanel();
+        toolbarPanel.setLayout(new BoxLayout(toolbarPanel, BoxLayout.X_AXIS));
         toolbarPanel.setOpaque(false);
         
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -64,8 +65,9 @@ public class PhongBanPanel extends JPanel {
         actionPanel.add(createBtn("Sửa", new Color(0, 123, 255)));
         actionPanel.add(createBtn("Xóa", new Color(220, 53, 69)));
 
-        toolbarPanel.add(filterPanel, BorderLayout.WEST);
-        toolbarPanel.add(actionPanel, BorderLayout.EAST);
+        toolbarPanel.add(filterPanel);
+        toolbarPanel.add(Box.createHorizontalGlue());
+        toolbarPanel.add(actionPanel);
         
         headerPanel.add(toolbarPanel, BorderLayout.SOUTH);
         add(headerPanel, BorderLayout.NORTH);
