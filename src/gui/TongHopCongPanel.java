@@ -31,11 +31,18 @@ public class TongHopCongPanel extends JPanel {
         titleActionPanel.add(titleLabel);
         titleActionPanel.add(Box.createHorizontalGlue());
         
-        titleActionPanel.add(createOutlineBtn("Tính lại công tự động"));
+        JButton btnExport = createOutlineBtn("Xuất Excel tổng hợp (CSV)");
+        JButton btnPrint = createOutlineBtn("In báo cáo (PDF)");
+        JButton btnLock = createBtn("Chốt bảng công kỳ này", new Color(13, 71, 161));
+
+        btnExport.addActionListener(e -> exportCSV());
+        btnPrint.addActionListener(e -> printTable());
+
+        titleActionPanel.add(btnExport);
         titleActionPanel.add(Box.createHorizontalStrut(10));
-        titleActionPanel.add(createOutlineBtn("Xuất Excel tổng hợp"));
+        titleActionPanel.add(btnPrint);
         titleActionPanel.add(Box.createHorizontalStrut(10));
-        titleActionPanel.add(createBtn("Chốt bảng công kỳ này", new Color(13, 71, 161)));
+        titleActionPanel.add(btnLock);
 
         headerPanel.add(titleActionPanel, BorderLayout.NORTH);
 
@@ -175,6 +182,64 @@ public class TongHopCongPanel extends JPanel {
                 "0.0", 
                 String.format("%.1f", khongLuong)
             });
+        }
+    }
+
+    private void exportCSV() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Lưu file Excel (CSV)");
+        int userSelection = fileChooser.showSaveDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            java.io.File fileToSave = fileChooser.getSelectedFile();
+            String filePath = fileToSave.getAbsolutePath();
+            if (!filePath.toLowerCase().endsWith(".csv")) {
+                filePath += ".csv";
+            }
+            
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(filePath);
+                 java.io.OutputStreamWriter osw = new java.io.OutputStreamWriter(fos, java.nio.charset.StandardCharsets.UTF_8);
+                 java.io.BufferedWriter bw = new java.io.BufferedWriter(osw)) {
+                
+                // BOM cho Excel
+                fos.write(0xEF);
+                fos.write(0xBB);
+                fos.write(0xBF);
+                
+                for (int i = 0; i < tableModel.getColumnCount(); i++) {
+                    bw.write(tableModel.getColumnName(i));
+                    if (i < tableModel.getColumnCount() - 1) bw.write(",");
+                }
+                bw.newLine();
+                
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    for (int j = 0; j < tableModel.getColumnCount(); j++) {
+                        String val = tableModel.getValueAt(i, j) != null ? tableModel.getValueAt(i, j).toString() : "";
+                        if (val.contains(",") || val.contains("\"")) {
+                            val = "\"" + val.replace("\"", "\"\"") + "\"";
+                        }
+                        bw.write(val);
+                        if (j < tableModel.getColumnCount() - 1) bw.write(",");
+                    }
+                    bw.newLine();
+                }
+                JOptionPane.showMessageDialog(this, "Xuất dữ liệu thành công:\n" + filePath, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi khi xuất: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void printTable() {
+        try {
+            boolean complete = table.print(JTable.PrintMode.FIT_WIDTH,
+                    new java.text.MessageFormat("BẢNG TỔNG HỢP CHẤM CÔNG"),
+                    new java.text.MessageFormat("Trang - {0}"));
+            if (complete) {
+                JOptionPane.showMessageDialog(this, "In / Xuất PDF hoàn tất!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (java.awt.print.PrinterException pe) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi in: " + pe.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
