@@ -1,8 +1,12 @@
 package gui;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
+import bus.BangLuongBUS;
+import model.BangLuong;
 
 public class XuatLuongPanel extends JPanel {
     private JTable table;
@@ -121,7 +125,7 @@ public class XuatLuongPanel extends JPanel {
 
         add(contentPanel, BorderLayout.CENTER);
 
-        loadDummyData();
+        loadDataFromDB(9, 2026);
     }
 
     private JButton createBtn(String text, Color bg) {
@@ -184,11 +188,21 @@ public class XuatLuongPanel extends JPanel {
         return panel;
     }
 
-    private void loadDummyData() {
-        tableModel.addRow(new Object[]{"VN-10492", "Trần Quang Minh", "24,650,000", "Đã gửi", "Đã ký"});
-        tableModel.addRow(new Object[]{"VN-10518", "Nguyễn Thị Hải Yến", "18,920,000", "Đã gửi", "Chờ ký"});
-        tableModel.addRow(new Object[]{"VN-09312", "Lê Hoàng Nam", "32,500,000", "Đã gửi", "Đã ký"});
-        tableModel.addRow(new Object[]{"VN-11004", "Đỗ Mai Linh", "15,400,000", "Chưa gửi", "Chưa"});
-        tableModel.addRow(new Object[]{"VN-08249", "Phạm Quốc Dũng", "28,110,000", "Đã gửi", "Đã ký"});
+    private void loadDataFromDB(int month, int year) {
+        BangLuongBUS bus = new BangLuongBUS();
+        List<BangLuong> list = bus.getByMonth(month, year);
+        
+        tableModel.setRowCount(0);
+        java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+        
+        for (BangLuong bl : list) {
+            tableModel.addRow(new Object[]{
+                bl.getMaNV(),
+                bl.getHoTen(),
+                df.format(bl.getThucLanh()),
+                "Chưa gửi",
+                "Chưa ký"
+            });
+        }
     }
 }

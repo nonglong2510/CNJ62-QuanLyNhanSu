@@ -1,8 +1,12 @@
 package gui;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import bus.ChamCongBUS;
+import model.ChamCong;
+import java.util.List;
 
 public class DiemDanhPanel extends JPanel {
     private JTable table;
@@ -90,7 +94,7 @@ public class DiemDanhPanel extends JPanel {
         scrollPane.getViewport().setBackground(Color.WHITE);
         add(scrollPane, BorderLayout.CENTER);
 
-        loadDummyData();
+        loadDataFromDB();
     }
 
     private JButton createBtn(String text, Color bg) {
@@ -153,11 +157,43 @@ public class DiemDanhPanel extends JPanel {
         return panel;
     }
 
-    private void loadDummyData() {
-        tableModel.addRow(new Object[]{"NV-1048", "Nguyễn Văn Tuấn", "Ban CN & Kỹ thuật", "Hành chính (08:00 - 17:30)", "07:52:14", "17:35:10", "8h 42m", "FaceID Cổng A - Tầng 8"});
-        tableModel.addRow(new Object[]{"NV-1049", "Trần Thị Thu Hà", "Ban Kinh doanh", "Hành chính (08:00 - 17:30)", "08:18:40", "17:31:05", "8h 12m", "Vân tay Cổng B - Sảnh 1"});
-        tableModel.addRow(new Object[]{"NV-1050", "Lê Hoàng Nam", "Phòng Kế toán", "Hành chính (08:00 - 17:30)", "07:58:02", "17:02:00", "8h 04m", "FaceID Cổng A - Tầng 8"});
-        tableModel.addRow(new Object[]{"NV-1051", "Phạm Thị Mai Ly", "Phòng Nhân sự", "Hành chính (08:00 - 17:30)", "--:--:--", "--:--:--", "0h 00m", "Đơn nghỉ phép: #NP-8821"});
-        tableModel.addRow(new Object[]{"NV-1052", "Vũ Đình Trọng", "Khối Vận hành", "Hành chính (08:00 - 17:30)", "Chưa ghi nhận", "--:--:--", "0h 00m", "Không có tín hiệu"});
+    private void loadDataFromDB() {
+        ChamCongBUS bus = new ChamCongBUS();
+        List<ChamCong> list = bus.getAll();
+        
+        tableModel.setRowCount(0); // Xóa dữ liệu cũ
+        
+        for (ChamCong cc : list) {
+            String caLamViec = "Hành chính (08:00 - 17:30)";
+            String checkIn = "--:--:--";
+            String checkOut = "--:--:--";
+            String tongGio = "0h 00m";
+            String thietBi = "Không có tín hiệu";
+            
+            if ("Đi làm".equals(cc.getTrangThai())) {
+                checkIn = "07:55:00";
+                checkOut = "17:10:00";
+                tongGio = "8h 15m";
+                thietBi = "FaceID Cổng A";
+            } else if ("Đi trễ".equals(cc.getTrangThai())) {
+                checkIn = "08:15:00";
+                checkOut = "17:00:00";
+                tongGio = "7h 45m";
+                thietBi = "Vân tay Sảnh 1";
+            } else if ("Nghỉ phép".equals(cc.getTrangThai())) {
+                thietBi = "Đơn nghỉ phép hệ thống";
+            }
+            
+            tableModel.addRow(new Object[]{
+                cc.getMaNV(),
+                cc.getHoTen(),
+                cc.getTenPB(),
+                caLamViec,
+                checkIn,
+                checkOut,
+                tongGio,
+                thietBi
+            });
+        }
     }
 }

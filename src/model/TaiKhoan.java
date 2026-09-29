@@ -5,6 +5,9 @@ public class TaiKhoan {
     private String matKhau;
     private String maNV;
     private String quyen;
+    
+    // Các trường bổ sung khi JOIN
+    private String hoTen;
 
     public TaiKhoan() {}
 
@@ -26,4 +29,7 @@ public class TaiKhoan {
 
     public String getQuyen() { return quyen; }
     public void setQuyen(String quyen) { this.quyen = quyen; }
+    
+    public String getHoTen() { return hoTen; }
+    public void setHoTen(String hoTen) { this.hoTen = hoTen; }
 }

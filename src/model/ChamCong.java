@@ -9,6 +9,10 @@ public class ChamCong {
     private String trangThai;
     private double soGioLamThem;
     private String ghiChu;
+    
+    // Các trường bổ sung khi JOIN với bảng khác
+    private String hoTen;
+    private String tenPB;
 
     public ChamCong() {}
 
@@ -38,4 +42,10 @@ public class ChamCong {
 
     public String getGhiChu() { return ghiChu; }
     public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
+
+    public String getHoTen() { return hoTen; }
+    public void setHoTen(String hoTen) { this.hoTen = hoTen; }
+
+    public String getTenPB() { return tenPB; }
+    public void setTenPB(String tenPB) { this.tenPB = tenPB; }
 }
