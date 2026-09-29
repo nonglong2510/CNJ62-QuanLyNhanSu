@@ -1,8 +1,12 @@
 package gui;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
+import bus.BangLuongBUS;
+import model.BangLuong;
 
 public class TinhLuongPanel extends JPanel {
     private JTable table;
@@ -90,7 +94,7 @@ public class TinhLuongPanel extends JPanel {
         scrollPane.getViewport().setBackground(Color.WHITE);
         add(scrollPane, BorderLayout.CENTER);
 
-        loadDummyData();
+        loadDataFromDB(9, 2026);
     }
 
     private JButton createBtn(String text, Color bg) {
@@ -153,11 +157,30 @@ public class TinhLuongPanel extends JPanel {
         return panel;
     }
 
-    private void loadDummyData() {
-        tableModel.addRow(new Object[]{"EMP-202108", "Nguyễn Tuấn Dũng", "Khối Công Nghệ", "48,000,000", "22.0", "48,000,000", "8,500,000", "3,250,000", "59,750,000"});
-        tableModel.addRow(new Object[]{"EMP-202319", "Trần Thị Minh Châu", "Tài chính", "32,000,000", "22.0", "32,000,000", "4,200,000", "6,850,000", "43,050,000"});
-        tableModel.addRow(new Object[]{"EMP-202241", "Lê Hoàng Nam", "Khối Kinh Doanh", "35,000,000", "22.0", "35,000,000", "38,500,000", "0", "73,500,000"});
-        tableModel.addRow(new Object[]{"EMP-202402", "Phạm Phương Anh", "Marketing", "18,000,000", "17.5", "14,318,182", "1,500,000", "0", "15,818,182"});
-        tableModel.addRow(new Object[]{"EMP-202275", "Võ Minh Trí", "Hành chính", "24,000,000", "22.0", "24,000,000", "2,800,000", "1,125,000", "27,925,000"});
+    private void loadDataFromDB(int month, int year) {
+        BangLuongBUS bus = new BangLuongBUS();
+        
+        // Tự động tính lương cho toàn bộ nhân viên trong tháng
+        bus.calculateSalaryForMonth(month, year);
+        
+        // Lấy danh sách kết quả
+        List<BangLuong> list = bus.getByMonth(month, year);
+        
+        tableModel.setRowCount(0);
+        java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+        
+        for (BangLuong bl : list) {
+            tableModel.addRow(new Object[]{
+                bl.getMaNV(),
+                bl.getHoTen(),
+                bl.getTenPB(),
+                df.format(bl.getLuongCoBan()), // MỨC LƯƠNG
+                bl.getSoNgayCong(), // NGÀY CÔNG
+                df.format(bl.getLuongCoBan()), // LƯƠNG CHÍNH
+                df.format(bl.getTongPhuCap() + bl.getTienThuong()), // PHỤ CẤP / THƯỞNG
+                df.format(bl.getTienPhat()), // KHẤU TRỪ / PHẠT
+                df.format(bl.getThucLanh()) // THỰC LÃNH
+            });
+        }
     }
 }

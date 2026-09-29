@@ -1,8 +1,11 @@
 package gui;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
+import bus.ChamCongBUS;
 
 public class TongHopCongPanel extends JPanel {
     private JTable table;
@@ -28,11 +31,18 @@ public class TongHopCongPanel extends JPanel {
         titleActionPanel.add(titleLabel);
         titleActionPanel.add(Box.createHorizontalGlue());
         
-        titleActionPanel.add(createOutlineBtn("Tính lại công tự động"));
+        JButton btnExport = createOutlineBtn("Xuất Excel tổng hợp (CSV)");
+        JButton btnPrint = createOutlineBtn("In báo cáo (PDF)");
+        JButton btnLock = createBtn("Chốt bảng công kỳ này", new Color(13, 71, 161));
+
+        btnExport.addActionListener(e -> exportCSV());
+        btnPrint.addActionListener(e -> printTable());
+
+        titleActionPanel.add(btnExport);
         titleActionPanel.add(Box.createHorizontalStrut(10));
-        titleActionPanel.add(createOutlineBtn("Xuất Excel tổng hợp"));
+        titleActionPanel.add(btnPrint);
         titleActionPanel.add(Box.createHorizontalStrut(10));
-        titleActionPanel.add(createBtn("Chốt bảng công kỳ này", new Color(13, 71, 161)));
+        titleActionPanel.add(btnLock);
 
         headerPanel.add(titleActionPanel, BorderLayout.NORTH);
 
@@ -84,7 +94,7 @@ public class TongHopCongPanel extends JPanel {
         scrollPane.getViewport().setBackground(Color.WHITE);
         add(scrollPane, BorderLayout.CENTER);
 
-        loadDummyData();
+        loadDataFromDB(9, 2026);
     }
 
     private JButton createBtn(String text, Color bg) {
@@ -147,11 +157,89 @@ public class TongHopCongPanel extends JPanel {
         return panel;
     }
 
-    private void loadDummyData() {
-        tableModel.addRow(new Object[]{"NV-1048", "Nguyễn Hoàng Long", "Khối Công nghệ", "22.0", "22.0", "0.0", "0.0", "0.0"});
-        tableModel.addRow(new Object[]{"NV-1049", "Trần Thị Ánh Tuyết", "Khối Kinh Doanh", "22.0", "20.0", "2.0", "0.0", "0.0"});
-        tableModel.addRow(new Object[]{"NV-1052", "Vũ Đình Quân", "Tài chính Kế toán", "22.0", "19.0", "0.0", "3.0", "0.0"});
-        tableModel.addRow(new Object[]{"NV-1065", "Lê Minh Châu", "Nhân sự & Hành chính", "22.0", "20.5", "0.0", "0.0", "1.5"});
-        tableModel.addRow(new Object[]{"NV-1082", "Phạm Quốc Bảo", "Vận hành Kho vận", "22.0", "22.0", "0.0", "0.0", "0.0"});
+    private void loadDataFromDB(int month, int year) {
+        ChamCongBUS bus = new ChamCongBUS();
+        List<Object[]> list = bus.getTongHopCongThang(month, year);
+        
+        tableModel.setRowCount(0);
+        
+        for (Object[] row : list) {
+            String maNV = (String) row[0];
+            String hoTen = (String) row[1];
+            String tenPB = (String) row[2];
+            int ngayCong = (Integer) row[3];
+            int nghiPhep = (Integer) row[4];
+            
+            double dinhMuc = 22.0; // Giả định tháng có 22 ngày công chuẩn
+            double khongLuong = dinhMuc - ngayCong - nghiPhep;
+            if (khongLuong < 0) khongLuong = 0;
+            
+            tableModel.addRow(new Object[]{
+                maNV, hoTen, tenPB, 
+                String.format("%.1f", dinhMuc), 
+                String.format("%.1f", (double) ngayCong), 
+                String.format("%.1f", (double) nghiPhep), 
+                "0.0", 
+                String.format("%.1f", khongLuong)
+            });
+        }
+    }
+
+    private void exportCSV() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Lưu file Excel (CSV)");
+        int userSelection = fileChooser.showSaveDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            java.io.File fileToSave = fileChooser.getSelectedFile();
+            String filePath = fileToSave.getAbsolutePath();
+            if (!filePath.toLowerCase().endsWith(".csv")) {
+                filePath += ".csv";
+            }
+            
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(filePath);
+                 java.io.OutputStreamWriter osw = new java.io.OutputStreamWriter(fos, java.nio.charset.StandardCharsets.UTF_8);
+                 java.io.BufferedWriter bw = new java.io.BufferedWriter(osw)) {
+                
+                // BOM cho Excel
+                fos.write(0xEF);
+                fos.write(0xBB);
+                fos.write(0xBF);
+                
+                for (int i = 0; i < tableModel.getColumnCount(); i++) {
+                    bw.write(tableModel.getColumnName(i));
+                    if (i < tableModel.getColumnCount() - 1) bw.write(",");
+                }
+                bw.newLine();
+                
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    for (int j = 0; j < tableModel.getColumnCount(); j++) {
+                        String val = tableModel.getValueAt(i, j) != null ? tableModel.getValueAt(i, j).toString() : "";
+                        if (val.contains(",") || val.contains("\"")) {
+                            val = "\"" + val.replace("\"", "\"\"") + "\"";
+                        }
+                        bw.write(val);
+                        if (j < tableModel.getColumnCount() - 1) bw.write(",");
+                    }
+                    bw.newLine();
+                }
+                JOptionPane.showMessageDialog(this, "Xuất dữ liệu thành công:\n" + filePath, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi khi xuất: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void printTable() {
+        try {
+            boolean complete = table.print(JTable.PrintMode.FIT_WIDTH,
+                    new java.text.MessageFormat("BẢNG TỔNG HỢP CHẤM CÔNG"),
+                    new java.text.MessageFormat("Trang - {0}"));
+            if (complete) {
+                JOptionPane.showMessageDialog(this, "In / Xuất PDF hoàn tất!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (java.awt.print.PrinterException pe) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi in: " + pe.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

@@ -10,16 +10,14 @@ import java.sql.SQLException;
 
 public class TaiKhoanDAL {
 
-    // Phương thức kiểm tra đăng nhập
-    public TaiKhoan login(String username, String password) {
+    public TaiKhoan getByUsername(String username) {
         TaiKhoan tk = null;
-        String sql = "SELECT * FROM TaiKhoan WHERE TenDangNhap = ? AND MatKhau = ?";
+        String sql = "SELECT * FROM TaiKhoan WHERE TenDangNhap = ?";
         
         try (Connection conn = DBHelper.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, username);
-            pstmt.setString(2, password);
             
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -33,6 +31,77 @@ public class TaiKhoanDAL {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return tk; // Nếu đăng nhập sai sẽ trả về null
+        return tk;
+    }
+
+    public java.util.List<TaiKhoan> getAll() {
+        java.util.List<TaiKhoan> list = new java.util.ArrayList<>();
+        String sql = "SELECT t.*, n.HoTen FROM TaiKhoan t LEFT JOIN NhanVien n ON t.MaNV = n.MaNV";
+        
+        try (Connection conn = DBHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            while (rs.next()) {
+                TaiKhoan tk = new TaiKhoan();
+                tk.setTenDangNhap(rs.getString("TenDangNhap"));
+                tk.setMatKhau(rs.getString("MatKhau"));
+                tk.setMaNV(rs.getString("MaNV"));
+                tk.setQuyen(rs.getString("Quyen"));
+                tk.setHoTen(rs.getString("HoTen") != null ? rs.getString("HoTen") : "Không xác định");
+                list.add(tk);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean insert(TaiKhoan tk) {
+        String sql = "INSERT INTO TaiKhoan(TenDangNhap, MatKhau, MaNV, Quyen) VALUES(?, ?, ?, ?)";
+        try (Connection conn = DBHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, tk.getTenDangNhap());
+            pstmt.setString(2, tk.getMatKhau());
+            pstmt.setString(3, tk.getMaNV());
+            pstmt.setString(4, tk.getQuyen());
+            return pstmt.executeUpdate() > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean update(TaiKhoan tk) {
+        String sql = "UPDATE TaiKhoan SET MatKhau = ?, MaNV = ?, Quyen = ? WHERE TenDangNhap = ?";
+        try (Connection conn = DBHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, tk.getMatKhau());
+            pstmt.setString(2, tk.getMaNV());
+            pstmt.setString(3, tk.getQuyen());
+            pstmt.setString(4, tk.getTenDangNhap());
+            return pstmt.executeUpdate() > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean delete(String username) {
+        String sql = "DELETE FROM TaiKhoan WHERE TenDangNhap = ?";
+        try (Connection conn = DBHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, username);
+            return pstmt.executeUpdate() > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

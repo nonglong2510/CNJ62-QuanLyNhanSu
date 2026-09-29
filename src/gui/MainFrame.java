@@ -6,12 +6,20 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import model.TaiKhoan;
+
 public class MainFrame extends JFrame {
     private JPanel contentPanel;
     private CardLayout cardLayout;
     private List<JButton> allMenuButtons = new ArrayList<>();
+    private TaiKhoan currentUser;
 
     public MainFrame() {
+        this(new TaiKhoan("admin", "admin", "NV-001", "Admin")); // Constructor mặc định cho testing
+    }
+
+    public MainFrame(TaiKhoan tk) {
+        this.currentUser = tk;
         setTitle("Hệ thống Quản lý nhân sự");
         setSize(1200, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -46,10 +54,19 @@ public class MainFrame extends JFrame {
         menuContainer.setLayout(new BoxLayout(menuContainer, BoxLayout.Y_AXIS));
         menuContainer.setOpaque(false);
 
-        String[][] heThong = {
-            {"Đổi mật khẩu", "ChangePassword"},
-            {"Quản lý tài khoản", "Account"}
-        };
+        boolean isAdmin = currentUser != null && "Admin".equals(currentUser.getQuyen());
+        
+        String[][] heThong;
+        if (isAdmin) {
+            heThong = new String[][] {
+                {"Đổi mật khẩu", "ChangePassword"},
+                {"Quản lý tài khoản", "Account"}
+            };
+        } else {
+            heThong = new String[][] {
+                {"Đổi mật khẩu", "ChangePassword"}
+            };
+        }
         String[][] nhanSu = {
             {"Quản lý Phòng ban", "PhongBan"},
             {"Quản lý Chức vụ", "ChucVu"},
@@ -97,7 +114,9 @@ public class MainFrame extends JFrame {
         avatar.setPreferredSize(new Dimension(35, 35));
         avatar.setHorizontalAlignment(SwingConstants.CENTER);
         
-        JLabel userInfo = new JLabel("<html><div style='color:white; font-size:11px; font-weight:bold;'>Admin User</div><div style='color:#A0AEC0; font-size:9px;'>Quản trị viên Hệ thống</div></html>");
+        String displayName = currentUser != null ? currentUser.getTenDangNhap() : "Admin User";
+        String displayRole = currentUser != null ? currentUser.getQuyen() : "Quản trị viên";
+        JLabel userInfo = new JLabel("<html><div style='color:white; font-size:11px; font-weight:bold;'>" + displayName + "</div><div style='color:#A0AEC0; font-size:9px;'>" + displayRole + "</div></html>");
         userInfoPanel.add(avatar);
         userInfoPanel.add(userInfo);
 
@@ -107,6 +126,14 @@ public class MainFrame extends JFrame {
         btnLogout.setBorderPainted(false);
         btnLogout.setContentAreaFilled(false);
         btnLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        btnLogout.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn đăng xuất?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                this.dispose();
+                new LoginFrame().setVisible(true);
+            }
+        });
         
         profilePanel.add(userInfoPanel, BorderLayout.WEST);
         profilePanel.add(btnLogout, BorderLayout.EAST);
@@ -130,6 +157,7 @@ public class MainFrame extends JFrame {
         contentPanel.add(new KhauTruPanel(), "KhauTru");
         contentPanel.add(new TinhLuongPanel(), "TinhLuong");
         contentPanel.add(new XuatLuongPanel(), "XuatLuong");
+        contentPanel.add(new TaiKhoanPanel(), "Account");
         contentPanel.add(createPlaceholderPanel("Chức năng đang được phát triển..."), "Placeholder");
 
         cardLayout.show(contentPanel, "Employees");
@@ -216,7 +244,8 @@ public class MainFrame extends JFrame {
 
             if (cardName.equals("Employees") || cardName.equals("PhongBan") || cardName.equals("ChucVu") ||
                 cardName.equals("DiemDanh") || cardName.equals("XinPhep") || cardName.equals("TongHopCong") ||
-                cardName.equals("LuongCoBan") || cardName.equals("KhauTru") || cardName.equals("TinhLuong") || cardName.equals("XuatLuong")) {
+                cardName.equals("LuongCoBan") || cardName.equals("KhauTru") || cardName.equals("TinhLuong") || 
+                cardName.equals("XuatLuong") || cardName.equals("Account")) {
                 cardLayout.show(contentPanel, cardName);
             } else {
                 cardLayout.show(contentPanel, "Placeholder");

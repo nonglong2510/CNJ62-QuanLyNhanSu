@@ -14,6 +14,10 @@ public class BangLuong {
     private double tienPhat;
     private double thucLanh;
     private Date ngayTinhLuong;
+    
+    // Các trường bổ sung khi JOIN
+    private String hoTen;
+    private String tenPB;
 
     public BangLuong() {}
 
@@ -64,4 +68,10 @@ public class BangLuong {
 
     public Date getNgayTinhLuong() { return ngayTinhLuong; }
     public void setNgayTinhLuong(Date ngayTinhLuong) { this.ngayTinhLuong = ngayTinhLuong; }
+
+    public String getHoTen() { return hoTen; }
+    public void setHoTen(String hoTen) { this.hoTen = hoTen; }
+
+    public String getTenPB() { return tenPB; }
+    public void setTenPB(String tenPB) { this.tenPB = tenPB; }
 }
