@@ -5,160 +5,144 @@ import model.ChucVu;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.util.List;
 
 public class ChucVuPanel extends JPanel {
-    private JTable table;
-    private DefaultTableModel tableModel;
-    private ChucVuBUS chucVuBUS;
+    private final ChucVuBUS bus = new ChucVuBUS();
+    private final JLabel count = new JLabel("0");
+    private final DefaultTableModel model = new DefaultTableModel(
+            new String[]{"MÃ CHỨC VỤ", "TÊN CHỨC VỤ", "PHỤ CẤP (VND)"}, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+    private final JTable table = new JTable(model);
 
     public ChucVuPanel() {
-        chucVuBUS = new ChucVuBUS();
-        
-        setLayout(new BorderLayout(10, 10));
-        setBackground(new Color(245, 245, 245));
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setLayout(new BorderLayout(0, 14));
+        setBackground(GuiStyle.BACKGROUND);
+        setBorder(BorderFactory.createEmptyBorder(22, 22, 22, 22));
 
-        // ================= 1. HEADER =================
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
-        
-        JPanel titleContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        titleContainer.setOpaque(false);
-        JLabel titleLabel = new JLabel("Danh mục Chức vụ & Vị trí");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        JLabel subTitleLabel = new JLabel("<html><span style='color:#10B981'>●</span> 38 Chức danh chuẩn hóa</html>");
-        subTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        titleContainer.add(titleLabel);
-        titleContainer.add(subTitleLabel);
-        headerPanel.add(titleContainer, BorderLayout.NORTH);
+        JTextField search = new JTextField(24);
+        search.putClientProperty("JTextField.placeholderText", "Tìm mã hoặc tên chức vụ");
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+        table.setRowSorter(sorter);
+        search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void filter() {
+                String text = search.getText().trim();
+                sorter.setRowFilter(text.isEmpty() ? null : RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(text)));
+            }
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+        });
 
-        // Summary Cards
-        JPanel cardsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
-        cardsPanel.setOpaque(false);
-        cardsPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
-        cardsPanel.add(createSummaryCard("TỔNG SỐ CHỨC DANH", "38", "Phân cấp 5 bậc vận hành", true));
-        cardsPanel.add(createSummaryCard("CẤP QUẢN LÝ & LÃNH ĐẠO", "14", "Giám đốc, Trưởng phòng", false));
-        cardsPanel.add(createSummaryCard("CHUYÊN MÔN & KỸ THUẬT", "24", "Chuyên viên, Kỹ sư", false));
-        cardsPanel.add(createSummaryCard("THANG BẬC LƯƠNG", "1.0 - 5.5", "Quy chế lương 2025", true));
-        headerPanel.add(cardsPanel, BorderLayout.CENTER);
+        JButton add = new JButton("Thêm");
+        JButton edit = new JButton("Sửa");
+        JButton delete = new JButton("Xóa");
+        GuiStyle.styleButton(add, GuiStyle.GREEN);
+        GuiStyle.styleButton(edit, GuiStyle.BLUE);
+        GuiStyle.styleButton(delete, GuiStyle.RED);
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        toolbar.setOpaque(false);
+        search.setPreferredSize(new Dimension(280, 36));
+        toolbar.add(search);
+        toolbar.add(add);
+        toolbar.add(edit);
+        toolbar.add(delete);
 
-        // Toolbar
-        JPanel toolbarPanel = new JPanel();
-        toolbarPanel.setLayout(new BoxLayout(toolbarPanel, BoxLayout.X_AXIS));
-        toolbarPanel.setOpaque(false);
-        
-        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        filterPanel.setOpaque(false);
-        JTextField searchField = new JTextField(25);
-        searchField.setPreferredSize(new Dimension(searchField.getPreferredSize().width, 35));
-        searchField.putClientProperty("JTextField.placeholderText", "Tìm theo tên chức vụ, cấp bậc...");
-        filterPanel.add(searchField);
-        filterPanel.add(createFilterBtn("Tất cả (38)", true));
-        filterPanel.add(createFilterBtn("Ban Giám đốc (3)", false));
-        
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        actionPanel.setOpaque(false);
-        actionPanel.add(createBtn("Thêm mới chức vụ", new Color(40, 167, 69)));
-        actionPanel.add(createBtn("Sửa", new Color(0, 123, 255)));
-        actionPanel.add(createBtn("Xóa", new Color(220, 53, 69)));
+        JLabel title = new JLabel("Quản lý chức vụ & phụ cấp");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 23));
+        title.setForeground(GuiStyle.TEXT);
+        JLabel subtitle = new JLabel("Thiết lập chức danh và mức phụ cấp theo vị trí");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        subtitle.setForeground(GuiStyle.MUTED);
+        JPanel titleBlock = new JPanel();
+        titleBlock.setOpaque(false);
+        titleBlock.setLayout(new BoxLayout(titleBlock, BoxLayout.Y_AXIS));
+        titleBlock.add(title);
+        titleBlock.add(Box.createVerticalStrut(3));
+        titleBlock.add(subtitle);
+        JPanel heading = new JPanel(new BorderLayout(10, 12));
+        heading.setOpaque(false);
+        heading.add(titleBlock, BorderLayout.NORTH);
+        heading.add(GuiStyle.metricCard("Chức vụ", count, "Danh mục vị trí"), BorderLayout.CENTER);
+        heading.add(toolbar, BorderLayout.SOUTH);
+        add(heading, BorderLayout.NORTH);
 
-        toolbarPanel.add(filterPanel);
-        toolbarPanel.add(Box.createHorizontalGlue());
-        toolbarPanel.add(actionPanel);
-        
-        headerPanel.add(toolbarPanel, BorderLayout.SOUTH);
-        add(headerPanel, BorderLayout.NORTH);
-
-        // ================= 2. TABLE =================
-        String[] columns = {"MÃ CV", "TÊN CHỨC VỤ", "CẤP BẬC (LEVEL)", "ĐỊNH BIÊN", "HỆ SỐ LƯƠNG", "PHỤ CẤP", "TRẠNG THÁI"};
-        tableModel = new DefaultTableModel(columns, 0);
-        table = new JTable(tableModel);
-        
-        table.setRowHeight(45);
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        table.getTableHeader().setBackground(Color.WHITE);
-        table.getTableHeader().setPreferredSize(new Dimension(100, 40));
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        table.setShowVerticalLines(false);
-        table.setGridColor(new Color(230, 230, 230));
-
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        GuiStyle.styleTable(table);
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230)));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(229, 234, 241)));
         scrollPane.getViewport().setBackground(Color.WHITE);
         add(scrollPane, BorderLayout.CENTER);
-
+        add.addActionListener(e -> editPosition(null));
+        edit.addActionListener(e -> {
+            ChucVu selected = selectedPosition();
+            if (selected != null) editPosition(selected);
+        });
+        delete.addActionListener(e -> deletePosition());
         loadData();
     }
 
-    private JButton createBtn(String text, Color bg) {
-        JButton btn = new JButton(text);
-        btn.setBackground(bg);
-        btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(150, 35));
-        if (text.equals("Sửa") || text.equals("Xóa")) {
-            btn.setPreferredSize(new Dimension(80, 35));
+    private void editPosition(ChucVu original) {
+        try {
+            ChucVu edited = MasterDataDialog.editPosition(this, original);
+            if (edited != null && bus.save(edited, original == null)) {
+                loadData();
+            }
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            showError(ex);
         }
-        return btn;
     }
 
-    private JButton createFilterBtn(String text, boolean active) {
-        JButton btn = new JButton(text);
-        btn.setBackground(active ? new Color(230, 240, 255) : Color.WHITE);
-        btn.setForeground(active ? new Color(0, 100, 200) : Color.DARK_GRAY);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
-        btn.setPreferredSize(new Dimension(text.length() * 8 + 30, 35));
-        return btn;
+    private ChucVu selectedPosition() {
+        int selected = table.getSelectedRow();
+        if (selected < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn chức vụ.");
+            return null;
+        }
+        int row = table.convertRowIndexToModel(selected);
+        return new ChucVu((String) model.getValueAt(row, 0),
+                (String) model.getValueAt(row, 1),
+                ((Number) model.getValueAt(row, 2)).doubleValue());
     }
 
-    private JPanel createSummaryCard(String title, String value, String subText, boolean success) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(230, 230, 230)),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-        
-        JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 10));
-        lblTitle.setForeground(new Color(100, 100, 100));
-        
-        JLabel lblValue = new JLabel(value);
-        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        
-        JLabel lblSub = new JLabel(subText);
-        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        if (success) lblSub.setForeground(new Color(40, 167, 69));
-        
-        panel.add(lblTitle);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(lblValue);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(lblSub);
-        return panel;
+    private void deletePosition() {
+        ChucVu selected = selectedPosition();
+        if (selected == null) return;
+        int answer = JOptionPane.showConfirmDialog(this,
+                "Xóa chức vụ " + selected.getTenCV() + "?",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (answer == JOptionPane.YES_OPTION) {
+            try {
+                bus.delete(selected.getMaCV());
+                loadData();
+            } catch (IllegalStateException ex) {
+                showError(ex);
+            }
+        }
     }
 
     private void loadData() {
-        tableModel.setRowCount(0);
-        List<ChucVu> list = chucVuBUS.getAll();
-        for (ChucVu cv : list) {
-            tableModel.addRow(new Object[]{
-                    cv.getMaCV(),
-                    cv.getTenCV(),
-                    "Level 5 - Manager", // Dummy
-                    "1/1 NV", // Dummy
-                    "4.5", // Dummy
-                    String.format("%,.0f đ", cv.getPhuCapChucVu()),
-                    "Đang áp dụng" // Dummy
-            });
+        try {
+            model.setRowCount(0);
+            java.util.List<ChucVu> positions = bus.getAll();
+            for (ChucVu position : positions) {
+                model.addRow(new Object[]{position.getMaCV(), position.getTenCV(), position.getPhuCapChucVu()});
+            }
+            count.setText(Integer.toString(positions.size()));
+        } catch (IllegalStateException ex) {
+            showError(ex);
         }
+    }
+
+    private void showError(RuntimeException ex) {
+        JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 }

@@ -1,0 +1,205 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build HR management app",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"-q",
+				"compile"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "inspect-docx",
+			"type": "shell",
+			"command": "python -c \"import os; p=r'D:\\Download\\File_template_BTL_2026.docx'; print(os.path.exists(p), os.path.getsize(p) if os.path.exists(p) else 0)\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "test-quote",
+			"type": "shell",
+			"command": "python -c \"print(123)\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "test-py",
+			"type": "shell",
+			"command": "python -c \"import sys; print(sys.version)\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "test-py2",
+			"type": "shell",
+			"command": "python -c 'print(123)'",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "read-docx",
+			"type": "shell",
+			"command": "python -c 'import zipfile, re, xml.etree.ElementTree as ET; p=r\"D:\\Download\\File_template_BTL_2026.docx\"; z=zipfile.ZipFile(p); xml=ET.fromstring(z.read(\"word/document.xml\")); ns={\"w\":\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"}; paras=[]; for p in xml.findall(\".//w:p\", ns): texts=[]; for t in p.findall(\".//w:t\", ns): texts.append(t.text or \"\"); txt=\"\".join(texts).strip(); if txt: style = p.find(\"w:pPr/w:pStyle\", ns); style_name = style.get(\"{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val\") if style is not None else \"\"; paras.append((style_name, txt));\nfor s,t in paras[:200]:\n    print(f\"STYLE={s}: {t[:200]}\")\n    \nprint(\"TOTAL_PARAS\", len(paras))'",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "test-cmd",
+			"type": "shell",
+			"command": "cmd.exe /c \"python -c \\\"print(123)\\\"\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "test-docx",
+			"type": "shell",
+			"command": "python -c 'import docx; from pathlib import Path; path = Path(chr(68)+chr(58)+chr(92)+chr(68)+chr(111)+chr(119)+chr(110)+chr(108)+chr(111)+chr(97)+chr(100)+chr(92)+chr(70)+chr(105)+chr(108)+chr(101)+chr(95)+chr(116)+chr(101)+chr(109)+chr(112)+chr(108)+chr(97)+chr(116)+chr(101)+chr(95)+chr(66)+chr(84)+chr(76)+chr(95)+chr(50)+chr(48)+chr(50)+chr(54)+chr(46)+chr(100)+chr(111)+chr(99)+chr(120)); print(path.exists(), path.stat().st_size if path.exists() else 0); doc = docx.Document(str(path)); print(len(doc.paragraphs)); print(doc.paragraphs[0].text[:100])'",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "extract-template",
+			"type": "shell",
+			"command": "python -c 'import zipfile; import xml.etree.ElementTree as ET; path = \"\".join(map(chr,[68,58,92,68,111,119,110,108,111,97,100,92,70,105,108,101,95,116,101,109,112,108,97,116,101,95,66,84,76,95,50,48,50,54,46,100,111,99,120])); z = zipfile.ZipFile(path); root = ET.fromstring(z.read(chr(119)+chr(111)+chr(114)+chr(100)+chr(47)+chr(100)+chr(111)+chr(99)+chr(117)+chr(109)+chr(101)+chr(110)+chr(116)+chr(46)+chr(120)+chr(109)+chr(108))); nsuri = \"\".join(map(chr,[123,104,116,116,112,58,47,47,115,99,104,101,109,97,115,46,111,112,101,110,120,109,108,102,111,114,109,115,46,111,114,103,47,119,111,114,100,112,114,111,99,101,115,115,105,110,103,109,108,47,50,48,48,54,47,109,97,105,110,125])); val = \"\".join(map(chr,[118,97,108])); out = []; for par in root.iter(): if par.tag.endswith(chr(125)+chr(112)): txt = \"\".join([t.text or \"\" for t in par.iter() if t.tag.endswith(chr(125)+chr(116))]).strip(); if txt: style = \"\"; for child in par: if child.tag.endswith(chr(125)+chr(112)+chr(80)+chr(114)): for c in child: if c.tag.endswith(chr(125)+chr(112)+chr(83)+chr(116)+chr(121)+chr(108)+chr(101)): style = c.get(nsuri + val) or c.get(val) or \"\"; break; out.append((style, txt)); for s,t in out[:80]: print(s, t[:180]); print(chr(84)+chr(79)+chr(84)+chr(65)+chr(76)+chr(95)+chr(80)+chr(65)+chr(82)+chr(65)+chr(83), len(out))'",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "test-esc",
+			"type": "shell",
+			"command": "python -c 'print(''123'')'",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "extract-template2",
+			"type": "shell",
+			"command": "python -c 'import zipfile, xml.etree.ElementTree as ET; path = ''D:\\Download\\File_template_BTL_2026.docx''; z = zipfile.ZipFile(path); root = ET.fromstring(z.read(''word/document.xml'')); ns = {''w'': ''http://schemas.openxmlformats.org/wordprocessingml/2006/main''}; style_attr = ''{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val''; out = []; for par in root.iter(): if par.tag.endswith(''}p''): txt = ''.join(t.text or '' for t in par.iter() if t.tag.endswith(''}t'')).strip(); if txt: style = ''''; for child in par: if child.tag.endswith(''}pPr''): for c in child: if c.tag.endswith(''}pStyle''): style = c.get(style_attr) or ''''; break; out.append((style, txt)); for s,t in out[:80]: print(s, t[:200]); print(''TOTAL_PARAS'', len(out))'",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "test-heredoc",
+			"type": "shell",
+			"command": "python -c @'\nprint(\"123\")\n'@",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "extract-template3",
+			"type": "shell",
+			"command": "python -c @'\nimport zipfile, xml.etree.ElementTree as ET\npath = r\"D:\\Download\\File_template_BTL_2026.docx\"\nz = zipfile.ZipFile(path)\nroot = ET.fromstring(z.read(\"word/document.xml\"))\nattr = \"{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val\"\nout = []\nfor par in root.iter():\n    if par.tag.endswith(\"}p\"):\n        txt = \"\".join(t.text or \"\" for t in par.iter() if t.tag.endswith(\"}t\")).strip()\n        if txt:\n            style = \"\"\n            for child in par:\n                if child.tag.endswith(\"}pPr\"):\n                    for c in child:\n                        if c.tag.endswith(\"}pStyle\"):\n                            style = c.get(attr) or \"\"\n                            break\n                    break\n            out.append((style, txt))\nfor s, t in out[:120]:\n    print(s, t[:200])\nprint(\"TOTAL_PARAS\", len(out))\n'@",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "test-ps-here",
+			"type": "shell",
+			"command": "python -c @'\npath = r'D:\\Download\\File_template_BTL_2026.docx'\nprint(path)\n'@",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "extract-template4",
+			"type": "shell",
+			"command": "python -c @'\nimport zipfile, xml.etree.ElementTree as ET\npath = r'D:\\Download\\File_template_BTL_2026.docx'\nz = zipfile.ZipFile(path)\nroot = ET.fromstring(z.read('word/document.xml'))\nattr = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val'\nout = []\nfor par in root.iter():\n    if par.tag.endswith('}p'):\n        txt = ''.join(t.text or '' for t in par.iter() if t.tag.endswith('}t')).strip()\n        if txt:\n            style = ''\n            for child in par:\n                if child.tag.endswith('}pPr'):\n                    for c in child:\n                        if c.tag.endswith('}pStyle'):\n                            style = c.get(attr) or ''\n                            break\n                    break\n            out.append((style, txt))\nfor s, t in out[:120]:\n    print(s, t[:200])\nprint('TOTAL_PARAS', len(out))\n'@",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "test-ps",
+			"type": "shell",
+			"command": "Write-Output 'hello'",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "extract-ps",
+			"type": "shell",
+			"command": "$path='D:\\Download\\File_template_BTL_2026.docx'; $zip = [System.IO.Compression.ZipFile]::OpenRead($path); $entry = $zip.GetEntry('word/document.xml'); $reader = New-Object System.IO.StreamReader($entry.Open()); [xml]$doc = $reader.ReadToEnd(); $doc.SelectNodes('//*[local-name()=\"p\"]') | ForEach-Object { $txt = ($_.SelectNodes('.//*[local-name()=\"t\"]') | ForEach-Object { $_.InnerText }) -join ''; if ($txt) { $style = $_.SelectSingleNode('./*[local-name()=\"pPr\"]/*[local-name()=\"pStyle\"]/@val'); $styleName = if ($style) { $style.Value } else { '' }; [pscustomobject]@{Style=$styleName; Text=$txt} } } | Select-Object -First 80 | Format-Table -AutoSize",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "extract-ps2",
+			"type": "shell",
+			"command": "[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null; $path='D:\\Download\\File_template_BTL_2026.docx'; $zip = [System.IO.Compression.ZipFile]::OpenRead($path); $entry = $zip.GetEntry('word/document.xml'); $reader = New-Object System.IO.StreamReader($entry.Open()); [xml]$doc = $reader.ReadToEnd(); $doc.SelectNodes('//*[local-name()=\"p\"]') | ForEach-Object { $txt = ($_.SelectNodes('.//*[local-name()=\"t\"]') | ForEach-Object { $_.InnerText }) -join ''; if ($txt) { $style = $_.SelectSingleNode('./*[local-name()=\"pPr\"]/*[local-name()=\"pStyle\"]/@val'); $styleName = if ($style) { $style.Value } else { '' }; [pscustomobject]@{Style=$styleName; Text=$txt} } } | Select-Object -First 40 | Format-Table -AutoSize",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "inspect-zip",
+			"type": "shell",
+			"command": "[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null; $path='D:\\Download\\File_template_BTL_2026.docx'; if (Test-Path $path) { 'exists'; [System.IO.Compression.ZipFile]::OpenRead($path).Entries | Select-Object -First 20 | ForEach-Object { $_.FullName } } else { 'missing' }",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "show-paragraphs",
+			"type": "shell",
+			"command": "[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null; $path='D:\\Download\\File_template_BTL_2026.docx'; $zip = [System.IO.Compression.ZipFile]::OpenRead($path); $reader = New-Object System.IO.StreamReader($zip.GetEntry('word/document.xml').Open()); [xml]$doc = $reader.ReadToEnd(); $doc.SelectNodes('//*[local-name()=\"p\"]') | ForEach-Object { $txt = ($_.SelectNodes('.//*[local-name()=\"t\"]') | ForEach-Object { $_.InnerText }) -join ''; if ($txt) { $style = $_.SelectSingleNode('./*[local-name()=\"pPr\"]/*[local-name()=\"pStyle\"]/@val'); $styleName = if ($style) { $style.Value } else { '' }; Write-Output ('STYLE=' + $styleName + ': ' + $txt.Substring(0, [Math]::Min(180,$txt.Length))) } } | Select-Object -First 40",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "count-paragraphs",
+			"type": "shell",
+			"command": "[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null; $path='D:\\Download\\File_template_BTL_2026.docx'; $zip = [System.IO.Compression.ZipFile]::OpenRead($path); $reader = New-Object System.IO.StreamReader($zip.GetEntry('word/document.xml').Open()); [xml]$doc = $reader.ReadToEnd(); Write-Output ('COUNT=' + $doc.SelectNodes('//*[local-name()=\"p\"]').Count); Write-Output ('ROOT=' + $doc.DocumentElement.LocalName)",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "count-paragraphs2",
+			"type": "shell",
+			"command": "[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null; $path='D:\\Download\\File_template_BTL_2026.docx'; $zip = [System.IO.Compression.ZipFile]::OpenRead($path); $reader = New-Object System.IO.StreamReader($zip.GetEntry('word/document.xml').Open()); [xml]$doc = $reader.ReadToEnd(); $count = ($doc.DocumentElement.SelectNodes('//*') | Where-Object { $_.LocalName -eq 'p' }).Count; Write-Output ('COUNT=' + $count)",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "show-first-paras",
+			"type": "shell",
+			"command": "[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null; $path='D:\\Download\\File_template_BTL_2026.docx'; $zip = [System.IO.Compression.ZipFile]::OpenRead($path); $reader = New-Object System.IO.StreamReader($zip.GetEntry('word/document.xml').Open()); [xml]$doc = $reader.ReadToEnd(); $doc.DocumentElement.SelectNodes('//*') | Where-Object { $_.LocalName -eq 'p' } | Select-Object -First 30 | ForEach-Object { $txt = ( $_.SelectNodes('.//*') | Where-Object { $_.LocalName -eq 't' } | ForEach-Object { $_.InnerText } ) -join ''; if ($txt) { $style = $_.SelectSingleNode('./*[local-name()=\"pPr\"]/*[local-name()=\"pStyle\"]/@val'); $styleName = if ($style) { $style.Value } else { '' }; Write-Output ('STYLE=' + $styleName + ': ' + $txt.Substring(0,[Math]::Min(180,$txt.Length))) } }",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "list-style-summary",
+			"type": "shell",
+			"command": "[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null; $path='D:\\Download\\File_template_BTL_2026.docx'; $zip = [System.IO.Compression.ZipFile]::OpenRead($path); $reader = New-Object System.IO.StreamReader($zip.GetEntry('word/document.xml').Open()); [xml]$doc = $reader.ReadToEnd(); $styles = $doc.DocumentElement.SelectNodes('//*') | Where-Object { $_.LocalName -eq 'p' } | ForEach-Object { $txt = ( $_.SelectNodes('.//*') | Where-Object { $_.LocalName -eq 't' } | ForEach-Object { $_.InnerText } ) -join ''; if ($txt) { $style = $_.SelectSingleNode('./*[local-name()=\"pPr\"]/*[local-name()=\"pStyle\"]/@val'); if ($style) { [pscustomobject]@{Style=$style.Value;Text=$txt} } else { [pscustomobject]@{Style='';Text=$txt} } } } | Group-Object Style | Sort-Object Count -Descending; $styles | Select-Object @{Name='Style';Expression={$_.Name}}, @{Name='Count';Expression={$_.Count}} | Format-Table -AutoSize",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "find-keywords",
+			"type": "shell",
+			"command": "[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null; $path='D:\\Download\\File_template_BTL_2026.docx'; $zip = [System.IO.Compression.ZipFile]::OpenRead($path); $reader = New-Object System.IO.StreamReader($zip.GetEntry('word/document.xml').Open()); [xml]$doc = $reader.ReadToEnd(); $doc.DocumentElement.SelectNodes('//*') | Where-Object { $_.LocalName -eq 'p' } | ForEach-Object { $txt = ( $_.SelectNodes('.//*') | Where-Object { $_.LocalName -eq 't' } | ForEach-Object { $_.InnerText } ) -join ''; if ($txt) { $keywords = 'Mục lục','Lời mở đầu','Chương','Kết luận','Tài liệu tham khảo','Phụ lục','Lời cảm ơn','MỞ ĐẦU','CHƯƠNG','Phần','Mục','BÁO CÁO','ĐỀ TÀI'; $match = $false; foreach ($k in $keywords) { if ($txt.Contains($k)) { $match = $true; break } }; if ($match) { Write-Output $txt } } }",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "keyword-doc",
+			"type": "shell",
+			"command": "[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null; $path='D:\\Download\\File_template_BTL_2026.docx'; $zip = [System.IO.Compression.ZipFile]::OpenRead($path); $reader = New-Object System.IO.StreamReader($zip.GetEntry('word/document.xml').Open()); [xml]$doc = $reader.ReadToEnd(); $keys = @('Mục lục','Lời mở đầu','Chương','Kết luận','Tài liệu','Phụ lục','Lời cảm ơn','Bảng','Hình','Danh sách','MỞ ĐẦU','Mục'); $doc.DocumentElement.SelectNodes('//*') | Where-Object { $_.LocalName -eq 'p' } | ForEach-Object { $txt = ( $_.SelectNodes('.//*') | Where-Object { $_.LocalName -eq 't' } | ForEach-Object { $_.InnerText } ) -join ''; if ($txt) { foreach($k in $keys){ if ($txt.Contains($k)) { Write-Output $txt; break } } } }",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run HR business tests",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"clean",
+				"test"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		}
+	]
+}

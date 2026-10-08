@@ -1,164 +1,108 @@
 package gui;
 
+import bus.BangLuongBUS;
+
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
 
 public class LuongCoBanPanel extends JPanel {
-    private JTable table;
-    private DefaultTableModel tableModel;
+    private final BangLuongBUS bus = new BangLuongBUS();
+    private final JTextField search = new JTextField(24);
+    private final JLabel summary = new JLabel();
+    private final DefaultTableModel model = new DefaultTableModel(new String[]{
+            "MÃ NV", "HỌ TÊN", "PHÒNG BAN - CHỨC VỤ", "HỆ SỐ LƯƠNG",
+            "LƯƠNG ĐỦ 22 NGÀY", "PHỤ CẤP CHỨC VỤ", "TỔNG DỰ KIẾN"
+    }, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+    private final JTable table = new JTable(model);
+    private final TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
 
     public LuongCoBanPanel() {
-        setLayout(new BorderLayout(10, 10));
-        setBackground(new Color(245, 245, 245));
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setLayout(new BorderLayout(0, 14));
+        setBackground(GuiStyle.BACKGROUND);
+        setBorder(BorderFactory.createEmptyBorder(22, 22, 22, 22));
+        JPanel header = new JPanel(new BorderLayout(8, 12));
+        header.setOpaque(false);
+        JPanel titleBlock = new JPanel();
+        titleBlock.setOpaque(false);
+        titleBlock.setLayout(new BoxLayout(titleBlock, BoxLayout.Y_AXIS));
+        JLabel title = new JLabel("Mức lương & phụ cấp");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 23));
+        title.setForeground(GuiStyle.TEXT);
+        JLabel subtitle = new JLabel("Tổng quan mức lương theo hệ số và chức vụ của nhân sự đang làm việc");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        subtitle.setForeground(GuiStyle.MUTED);
+        titleBlock.add(title);
+        titleBlock.add(Box.createVerticalStrut(3));
+        titleBlock.add(subtitle);
+        header.add(titleBlock, BorderLayout.NORTH);
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        controls.setOpaque(false);
+        controls.add(new JLabel("Tìm nhân viên:"));
+        search.setPreferredSize(new Dimension(260, 36));
+        controls.add(search);
+        JButton reload = new JButton("Tải lại");
+        GuiStyle.styleButton(reload, GuiStyle.BLUE);
+        controls.add(reload);
+        summary.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
+        summary.setForeground(GuiStyle.MUTED);
+        controls.add(summary);
+        header.add(controls, BorderLayout.SOUTH);
+        add(header, BorderLayout.NORTH);
 
-        // ================= 1. HEADER =================
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
-        
-        // Title & Top Actions
-        JPanel titleActionPanel = new JPanel();
-        titleActionPanel.setLayout(new BoxLayout(titleActionPanel, BoxLayout.X_AXIS));
-        titleActionPanel.setOpaque(false);
-        
-        JLabel titleLabel = new JLabel("Quản lý Lương cơ bản & Phụ cấp");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        
-        JLabel subTitleLabel = new JLabel("<html><span style='color:#10B981'>●</span> Quy chế lương 2025 (Hiệu lực)</html>");
-        subTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        
-        titleActionPanel.add(titleLabel);
-        titleActionPanel.add(Box.createHorizontalStrut(15));
-        titleActionPanel.add(subTitleLabel);
-        titleActionPanel.add(Box.createHorizontalGlue());
-        
-        titleActionPanel.add(createOutlineBtn("Xuất Excel"));
-        titleActionPanel.add(Box.createHorizontalStrut(10));
-        titleActionPanel.add(createOutlineBtn("Cập nhật hàng loạt"));
-        titleActionPanel.add(Box.createHorizontalStrut(10));
-        titleActionPanel.add(createBtn("+ Thiết lập ngạch bậc lương mới", new Color(13, 110, 253)));
-
-        headerPanel.add(titleActionPanel, BorderLayout.NORTH);
-
-        // Summary Cards
-        JPanel cardsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
-        cardsPanel.setOpaque(false);
-        cardsPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
-        cardsPanel.add(createSummaryCard("TỔNG QUỸ LƯƠNG CƠ BẢN", "24,850,000,000 đ", "Áp dụng 1,248 nhân sự", true));
-        cardsPanel.add(createSummaryCard("MỨC LƯƠNG BÌNH QUÂN", "19,910,000 đ", "+5.2% so với 2024", true));
-        cardsPanel.add(createSummaryCard("TỔNG QUỸ PHỤ CẤP THÁNG", "3,420,000,000 đ", "Chiếm 13.8% tổng quỹ lương", false));
-        cardsPanel.add(createSummaryCard("DANH MỤC PHỤ CẤP", "12 khoản mục", "100% hợp lệ", true));
-        headerPanel.add(cardsPanel, BorderLayout.CENTER);
-
-        // Toolbar
-        JPanel toolbarPanel = new JPanel();
-        toolbarPanel.setLayout(new BoxLayout(toolbarPanel, BoxLayout.X_AXIS));
-        toolbarPanel.setOpaque(false);
-        
-        JPanel filterTabs = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        filterTabs.setOpaque(false);
-        filterTabs.add(createFilterBtn("Ngạch bậc & Mức lương (1,248)", true));
-        filterTabs.add(createFilterBtn("Danh mục Phụ cấp định mức (12)", false));
-        filterTabs.add(createFilterBtn("Cấu hình Lương theo Hợp đồng", false));
-        
-        JPanel bulkActionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bulkActionPanel.setOpaque(false);
-        bulkActionPanel.add(createOutlineBtn("Lọc theo Mã NV, tên..."));
-
-        toolbarPanel.add(filterTabs);
-        toolbarPanel.add(Box.createHorizontalGlue());
-        toolbarPanel.add(bulkActionPanel);
-        
-        headerPanel.add(toolbarPanel, BorderLayout.SOUTH);
-        add(headerPanel, BorderLayout.NORTH);
-
-        // ================= 2. TABLE =================
-        String[] columns = {"MÃ NV", "HỌ TÊN NHÂN SỰ", "PHÒNG BAN & VỊ TRÍ", "NGẠCH / BẬC", "LƯƠNG CƠ BẢN", "PC TRÁCH NHIỆM", "PC ĂN TRƯA", "TỔNG THU NHẬP CĐ"};
-        tableModel = new DefaultTableModel(columns, 0);
-        table = new JTable(tableModel);
-        
-        table.setRowHeight(50); 
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
-        table.getTableHeader().setBackground(Color.WHITE);
-        table.getTableHeader().setPreferredSize(new Dimension(100, 40));
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.setShowVerticalLines(false);
-        table.setGridColor(new Color(230, 230, 230));
-
+        GuiStyle.styleTable(table);
+        table.setRowSorter(sorter);
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230)));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(229, 234, 241)));
         scrollPane.getViewport().setBackground(Color.WHITE);
         add(scrollPane, BorderLayout.CENTER);
-
-        loadDummyData();
+        reload.addActionListener(e -> loadData());
+        search.getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { filter(); }
+            @Override public void removeUpdate(DocumentEvent e) { filter(); }
+            @Override public void changedUpdate(DocumentEvent e) { filter(); }
+        });
+        loadData();
     }
 
-    private JButton createBtn(String text, Color bg) {
-        JButton btn = new JButton(text);
-        btn.setBackground(bg);
-        btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
+    private void loadData() {
+        try {
+            List<Object[]> rows = bus.getDanhSachLuongCoBan();
+            model.setRowCount(0);
+            double total = 0;
+            for (Object[] row : rows) {
+                double base = ((Number) row[4]).doubleValue();
+                double allowance = ((Number) row[5]).doubleValue();
+                total += ((Number) row[6]).doubleValue();
+                model.addRow(new Object[]{row[0], row[1], row[2], row[3], money(base),
+                        money(allowance), money(base + allowance)});
+            }
+            summary.setText("Nhân viên đang làm việc: " + rows.size()
+                    + "  |  Tổng dự kiến đủ 22 công: " + money(total));
+        } catch (RuntimeException ex) {
+            model.setRowCount(0);
+            summary.setText("Không tải được dữ liệu lương");
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
-    private JButton createOutlineBtn(String text) {
-        JButton btn = new JButton(text);
-        btn.setBackground(Color.WHITE);
-        btn.setForeground(Color.DARK_GRAY);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
+    private void filter() {
+        String query = search.getText().trim();
+        sorter.setRowFilter(query.isEmpty() ? null : RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(query)));
     }
 
-    private JButton createFilterBtn(String text, boolean active) {
-        JButton btn = new JButton(text);
-        btn.setBackground(active ? new Color(230, 240, 255) : Color.WHITE);
-        btn.setForeground(active ? new Color(13, 110, 253) : Color.DARK_GRAY);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
-        return btn;
-    }
-
-    private JPanel createSummaryCard(String title, String value, String subText, boolean success) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(230, 230, 230)),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-        
-        JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 10));
-        lblTitle.setForeground(new Color(100, 100, 100));
-        
-        JLabel lblValue = new JLabel(value);
-        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        
-        JLabel lblSub = new JLabel(subText);
-        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        if (success) lblSub.setForeground(new Color(40, 167, 69));
-        
-        panel.add(lblTitle);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(lblValue);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(lblSub);
-        return panel;
-    }
-
-    private void loadDummyData() {
-        tableModel.addRow(new Object[]{"NV-00812", "Nguyễn Tuấn Khôi", "Giám đốc Kỹ thuật (CTO)", "Bậc 7.2", "36,800,000", "8,000,000", "2,500,000", "47,300,000"});
-        tableModel.addRow(new Object[]{"NV-01044", "Lê Thị Mai Anh", "Kỹ sư Kiến trúc Dữ liệu", "Bậc 5.1", "26,500,000", "3,500,000", "2,000,000", "32,000,000"});
-        tableModel.addRow(new Object[]{"NV-01298", "Trần Minh Hoàng", "Trưởng phòng Kế toán", "Bậc 6.1", "28,500,000", "5,000,000", "2,000,000", "35,500,000"});
-        tableModel.addRow(new Object[]{"NV-01452", "Phạm Ngọc Bích", "Chuyên viên Nhân sự", "Bậc 4.3", "19,200,000", "1,500,000", "1,800,000", "22,500,000"});
-        tableModel.addRow(new Object[]{"NV-01773", "Đỗ Hoàng Nam", "Trưởng nhóm Kinh doanh", "Bậc 5.2", "21,500,000", "4,000,000", "3,200,000", "28,700,000"});
+    private String money(double amount) {
+        return NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN")).format(Math.round(amount)) + " đ";
     }
 }

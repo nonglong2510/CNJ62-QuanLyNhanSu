@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run HR Management System",
+            "request": "launch",
+            "mainClass": "gui.LoginFrame",
+            "preLaunchTask": "Build HR management app"
+        }
+    ]
+}

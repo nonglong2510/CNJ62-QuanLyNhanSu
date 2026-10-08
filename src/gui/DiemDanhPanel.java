@@ -1,199 +1,180 @@
 package gui;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
 import bus.ChamCongBUS;
-import model.ChamCong;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+import java.awt.*;
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 public class DiemDanhPanel extends JPanel {
-    private JTable table;
-    private DefaultTableModel tableModel;
+    private final ChamCongBUS bus = new ChamCongBUS();
+    private final JLabel attendanceCount = new JLabel("0");
+    private final JTextField dateField = new JTextField(LocalDate.now().toString(), 10);
+    private final JTextField search = new JTextField(18);
+    private final JComboBox<String> statusFilter = new JComboBox<>(
+            new String[]{"Tất cả trạng thái", "Chưa điểm danh", "Đi làm", "Đi trễ", "Nghỉ phép", "Không phép"});
+    private final DefaultTableModel model = new DefaultTableModel(
+            new String[]{"MÃ NV", "HỌ TÊN", "PHÒNG BAN", "TRẠNG THÁI", "GIỜ OT", "GHI CHÚ"}, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+    private final JTable table = new JTable(model);
+    private final TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+    private Date currentDate = Date.valueOf(LocalDate.now());
 
     public DiemDanhPanel() {
-        setLayout(new BorderLayout(10, 10));
-        setBackground(new Color(245, 245, 245));
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setLayout(new BorderLayout(0, 14));
+        setBackground(GuiStyle.BACKGROUND);
+        setBorder(BorderFactory.createEmptyBorder(22, 22, 22, 22));
 
-        // ================= 1. HEADER =================
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
-        
-        // Title & Top Actions
-        JPanel titleActionPanel = new JPanel();
-        titleActionPanel.setLayout(new BoxLayout(titleActionPanel, BoxLayout.X_AXIS));
-        titleActionPanel.setOpaque(false);
-        
-        JLabel titleLabel = new JLabel("Điểm danh hàng ngày");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        
-        JLabel subTitleLabel = new JLabel("<html><span style='color:#3B82F6'>●</span> Hôm nay: Thứ Tư, 15/05/2025</html>");
-        subTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        
-        titleActionPanel.add(titleLabel);
-        titleActionPanel.add(Box.createHorizontalStrut(15));
-        titleActionPanel.add(subTitleLabel);
-        titleActionPanel.add(Box.createHorizontalGlue());
-        
-        titleActionPanel.add(createOutlineBtn("Đồng bộ máy chấm công"));
-        titleActionPanel.add(Box.createHorizontalStrut(10));
-        titleActionPanel.add(createOutlineBtn("Xuất báo cáo ngày"));
+        JButton refresh = new JButton("Tải ngày");
+        JButton today = new JButton("Hôm nay");
+        JButton update = new JButton("Cập nhật điểm danh");
+        GuiStyle.styleButton(refresh, new Color(102, 119, 140));
+        GuiStyle.styleButton(today, new Color(102, 119, 140));
+        GuiStyle.styleButton(update, GuiStyle.BLUE);
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        toolbar.setOpaque(false);
+        search.putClientProperty("JTextField.placeholderText", "Tìm mã, tên hoặc phòng ban");
+        search.setPreferredSize(new Dimension(205, 36));
+        dateField.setPreferredSize(new Dimension(130, 36));
+        toolbar.add(search);
+        toolbar.add(statusFilter);
+        toolbar.add(new JLabel("Ngày (YYYY-MM-DD):"));
+        toolbar.add(dateField);
+        toolbar.add(today);
+        toolbar.add(refresh);
+        toolbar.add(update);
+        JLabel title = new JLabel("Chấm công hàng ngày");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 23));
+        title.setForeground(GuiStyle.TEXT);
+        JLabel subtitle = new JLabel("Ghi nhận trạng thái làm việc và giờ làm thêm của nhân viên");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        subtitle.setForeground(GuiStyle.MUTED);
+        JPanel titleBlock = new JPanel();
+        titleBlock.setOpaque(false);
+        titleBlock.setLayout(new BoxLayout(titleBlock, BoxLayout.Y_AXIS));
+        titleBlock.add(title);
+        titleBlock.add(Box.createVerticalStrut(3));
+        titleBlock.add(subtitle);
+        JPanel heading = new JPanel(new BorderLayout(10, 12));
+        heading.setOpaque(false);
+        heading.add(titleBlock, BorderLayout.NORTH);
+        heading.add(GuiStyle.metricCard("Nhân viên trong ngày", attendanceCount, "Danh sách đang làm việc"), BorderLayout.CENTER);
+        heading.add(toolbar, BorderLayout.SOUTH);
+        add(heading, BorderLayout.NORTH);
 
-        headerPanel.add(titleActionPanel, BorderLayout.NORTH);
-
-        // Summary Cards
-        JPanel cardsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
-        cardsPanel.setOpaque(false);
-        cardsPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
-        cardsPanel.add(createSummaryCard("TỔNG QUÂN SỐ LÀM VIỆC", "1.248", "100% dữ liệu đã ghi nhận", true));
-        cardsPanel.add(createSummaryCard("ĐÚNG GIỜ (ON-TIME)", "1.156", "92.6% tỷ lệ tuân thủ", true));
-        cardsPanel.add(createSummaryCard("ĐI MUỘN / VỀ SỚM", "42", "34 muộn • 8 về sớm", false));
-        cardsPanel.add(createSummaryCard("VẮNG MẶT / CHƯA ĐIỂM DANH", "50", "38 có phép • 12 chưa check-in", false));
-        headerPanel.add(cardsPanel, BorderLayout.CENTER);
-
-        // Toolbar
-        JPanel toolbarPanel = new JPanel(new BorderLayout());
-        toolbarPanel.setOpaque(false);
-        
-        JPanel filterTabs = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        filterTabs.setOpaque(false);
-        filterTabs.add(createFilterBtn("Tất cả (1.248)", true));
-        filterTabs.add(createFilterBtn("Đúng giờ (1.156)", false));
-        filterTabs.add(createFilterBtn("Đi muộn (34)", false));
-        filterTabs.add(createFilterBtn("Về sớm (8)", false));
-        
-        JPanel bulkActionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bulkActionPanel.setOpaque(false);
-        bulkActionPanel.add(createBtn("+ Điểm danh bù / Thủ công", new Color(30, 64, 175)));
-        bulkActionPanel.add(createBtn("Duyệt giải trình", new Color(59, 130, 246)));
-        bulkActionPanel.add(createOutlineBtn("Gửi nhắc nhở qua Email"));
-
-        toolbarPanel.add(filterTabs, BorderLayout.WEST);
-        toolbarPanel.add(bulkActionPanel, BorderLayout.EAST);
-        
-        headerPanel.add(toolbarPanel, BorderLayout.SOUTH);
-        add(headerPanel, BorderLayout.NORTH);
-
-        // ================= 2. TABLE =================
-        String[] columns = {"MÃ NV", "HỌ TÊN", "PHÒNG BAN", "CA LÀM VIỆC", "CHECK-IN", "CHECK-OUT", "TỔNG GIỜ", "THIẾT BỊ / ĐỊA ĐIỂM"};
-        tableModel = new DefaultTableModel(columns, 0);
-        table = new JTable(tableModel);
-        
-        table.setRowHeight(50);
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
-        table.getTableHeader().setBackground(Color.WHITE);
-        table.getTableHeader().setPreferredSize(new Dimension(100, 40));
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.setShowVerticalLines(false);
-        table.setGridColor(new Color(230, 230, 230));
-
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        GuiStyle.styleTable(table);
+        table.setRowSorter(sorter);
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230)));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(229, 234, 241)));
         scrollPane.getViewport().setBackground(Color.WHITE);
         add(scrollPane, BorderLayout.CENTER);
-
+        refresh.addActionListener(e -> loadDate());
+        today.addActionListener(e -> {
+            dateField.setText(LocalDate.now().toString());
+            loadDate();
+        });
+        update.addActionListener(e -> openUpdateDialog());
+        dateField.addActionListener(e -> loadDate());
+        search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                applyFilters();
+            }
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                applyFilters();
+            }
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                applyFilters();
+            }
+        });
+        statusFilter.addActionListener(e -> applyFilters());
         loadDataFromDB();
     }
 
-    private JButton createBtn(String text, Color bg) {
-        JButton btn = new JButton(text);
-        btn.setBackground(bg);
-        btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
-    }
-
-    private JButton createOutlineBtn(String text) {
-        JButton btn = new JButton(text);
-        btn.setBackground(Color.WHITE);
-        btn.setForeground(Color.DARK_GRAY);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
-    }
-
-    private JButton createFilterBtn(String text, boolean active) {
-        JButton btn = new JButton(text);
-        btn.setBackground(active ? new Color(230, 240, 255) : Color.WHITE);
-        btn.setForeground(active ? new Color(0, 100, 200) : Color.DARK_GRAY);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
-        return btn;
-    }
-
-    private JPanel createSummaryCard(String title, String value, String subText, boolean success) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(230, 230, 230)),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-        
-        JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 10));
-        lblTitle.setForeground(new Color(100, 100, 100));
-        
-        JLabel lblValue = new JLabel(value);
-        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        
-        JLabel lblSub = new JLabel(subText);
-        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        if (success) lblSub.setForeground(new Color(40, 167, 69));
-        
-        panel.add(lblTitle);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(lblValue);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(lblSub);
-        return panel;
+    private void loadDate() {
+        try {
+            currentDate = Date.valueOf(dateField.getText().trim());
+            loadDataFromDB();
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, "Ngày phải theo định dạng YYYY-MM-DD.",
+                    "Ngày không hợp lệ", JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     private void loadDataFromDB() {
-        ChamCongBUS bus = new ChamCongBUS();
-        List<ChamCong> list = bus.getAll();
-        
-        tableModel.setRowCount(0); // Xóa dữ liệu cũ
-        
-        for (ChamCong cc : list) {
-            String caLamViec = "Hành chính (08:00 - 17:30)";
-            String checkIn = "--:--:--";
-            String checkOut = "--:--:--";
-            String tongGio = "0h 00m";
-            String thietBi = "Không có tín hiệu";
-            
-            if ("Đi làm".equals(cc.getTrangThai())) {
-                checkIn = "07:55:00";
-                checkOut = "17:10:00";
-                tongGio = "8h 15m";
-                thietBi = "FaceID Cổng A";
-            } else if ("Đi trễ".equals(cc.getTrangThai())) {
-                checkIn = "08:15:00";
-                checkOut = "17:00:00";
-                tongGio = "7h 45m";
-                thietBi = "Vân tay Sảnh 1";
-            } else if ("Nghỉ phép".equals(cc.getTrangThai())) {
-                thietBi = "Đơn nghỉ phép hệ thống";
-            }
-            
-            tableModel.addRow(new Object[]{
-                cc.getMaNV(),
-                cc.getHoTen(),
-                cc.getTenPB(),
-                caLamViec,
-                checkIn,
-                checkOut,
-                tongGio,
-                thietBi
-            });
+        try {
+            List<Object[]> rows = bus.getDiemDanhNgay(currentDate);
+            model.setRowCount(0);
+            for (Object[] row : rows) model.addRow(row);
+            attendanceCount.setText(Integer.toString(rows.size()));
+            applyFilters();
+        } catch (IllegalStateException ex) {
+            showError(ex);
         }
+    }
+
+    private void openUpdateDialog() {
+        int selected = table.getSelectedRow();
+        if (selected < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên.");
+            return;
+        }
+        int modelRow = table.convertRowIndexToModel(selected);
+        String employeeId = (String) model.getValueAt(modelRow, 0);
+        String employeeName = (String) model.getValueAt(modelRow, 1);
+        String currentStatus = (String) model.getValueAt(modelRow, 3);
+        double currentOt = ((Number) model.getValueAt(modelRow, 4)).doubleValue();
+        String currentNote = (String) model.getValueAt(modelRow, 5);
+
+        JComboBox<String> status = new JComboBox<>(
+                new String[]{"-- Chọn trạng thái --", "Đi làm", "Đi trễ", "Nghỉ phép", "Không phép"});
+        status.setSelectedItem("Chưa điểm danh".equals(currentStatus)
+                ? "-- Chọn trạng thái --" : currentStatus);
+        JTextField ot = new JTextField(Double.toString(currentOt));
+        JTextField note = new JTextField(currentNote);
+        Object[] fields = {"Nhân viên: " + employeeName + " (" + employeeId + ")",
+                "Trạng thái:", status, "Giờ làm thêm:", ot, "Ghi chú:", note};
+        if (JOptionPane.showConfirmDialog(this, fields, "Cập nhật chấm công",
+                JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION) return;
+
+        try {
+            String selectedStatus = (String) status.getSelectedItem();
+            if (selectedStatus == null || selectedStatus.startsWith("--")) {
+                throw new IllegalArgumentException("Vui lòng chọn trạng thái chấm công.");
+            }
+            double otHours = Double.parseDouble(ot.getText().trim());
+            bus.upsertDiemDanh(employeeId, currentDate, selectedStatus, otHours, note.getText());
+            loadDataFromDB();
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            showError(ex);
+        }
+    }
+
+    private void applyFilters() {
+        String query = search.getText().trim();
+        String selectedStatus = (String) statusFilter.getSelectedItem();
+        java.util.List<RowFilter<DefaultTableModel, Integer>> filters = new java.util.ArrayList<>();
+        if (selectedStatus != null && !"Tất cả trạng thái".equals(selectedStatus)) {
+            filters.add(RowFilter.regexFilter("^" + java.util.regex.Pattern.quote(selectedStatus) + "$", 3));
+        }
+        if (!query.isEmpty()) {
+            filters.add(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(query)));
+        }
+        sorter.setRowFilter(filters.isEmpty() ? null : RowFilter.andFilter(filters));
+    }
+
+    private void showError(RuntimeException ex) {
+        JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 }

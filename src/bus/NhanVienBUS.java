@@ -15,20 +15,20 @@ public class NhanVienBUS {
         return nhanVienDAL.getAll();
     }
 
-    public boolean add(NhanVien nv) {
-        // Kiểm tra logic nghiệp vụ: Mã nhân viên không được rỗng
-        if (nv.getMaNV() == null || nv.getMaNV().trim().isEmpty()) {
-            return false;
+    public NhanVien getById(String maNV) {
+        if (empty(maNV)) {
+            throw new IllegalArgumentException("Mã nhân viên là bắt buộc.");
         }
-        
-        // Bạn có thể bổ sung các kiểm tra khác ở đây: số điện thoại hợp lệ, email hợp lệ...
+        return nhanVienDAL.getById(maNV.trim());
+    }
+
+    public boolean add(NhanVien nv) {
+        NhanVienValidator.validate(nv);
         return nhanVienDAL.add(nv);
     }
 
     public boolean update(NhanVien nv) {
-        if (nv.getMaNV() == null || nv.getMaNV().trim().isEmpty()) {
-            return false;
-        }
+        NhanVienValidator.validate(nv);
         return nhanVienDAL.update(nv);
     }
 
@@ -37,5 +37,9 @@ public class NhanVienBUS {
             return false;
         }
         return nhanVienDAL.delete(maNV);
+    }
+
+    private boolean empty(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

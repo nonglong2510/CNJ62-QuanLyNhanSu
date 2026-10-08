@@ -32,4 +32,41 @@ public class ChucVuDAL {
         }
         return list;
     }
+
+    public boolean insert(ChucVu chucVu) {
+        String sql = "INSERT INTO ChucVu (MaCV, TenCV, PhuCapChucVu) VALUES (?, ?, ?)";
+        try (Connection conn = DBHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, chucVu.getMaCV());
+            pstmt.setString(2, chucVu.getTenCV());
+            pstmt.setDouble(3, chucVu.getPhuCapChucVu());
+            return pstmt.executeUpdate() == 1;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể thêm chức vụ.", e);
+        }
+    }
+
+    public boolean update(ChucVu chucVu) {
+        String sql = "UPDATE ChucVu SET TenCV = ?, PhuCapChucVu = ? WHERE MaCV = ?";
+        try (Connection conn = DBHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, chucVu.getTenCV());
+            pstmt.setDouble(2, chucVu.getPhuCapChucVu());
+            pstmt.setString(3, chucVu.getMaCV());
+            return pstmt.executeUpdate() == 1;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể cập nhật chức vụ.", e);
+        }
+    }
+
+    public boolean delete(String maCV) {
+        String sql = "DELETE FROM ChucVu WHERE MaCV = ?";
+        try (Connection conn = DBHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, maCV);
+            return pstmt.executeUpdate() == 1;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể xóa chức vụ đang được nhân viên sử dụng.", e);
+        }
+    }
 }

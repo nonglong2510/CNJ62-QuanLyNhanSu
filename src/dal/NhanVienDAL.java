@@ -15,7 +15,9 @@ public class NhanVienDAL {
     // Lấy toàn bộ danh sách nhân viên
     public List<NhanVien> getAll() {
         List<NhanVien> list = new ArrayList<>();
-        String sql = "SELECT * FROM NhanVien";
+        String sql = "SELECT n.*, p.TenPB, c.TenCV FROM NhanVien n "
+                + "LEFT JOIN PhongBan p ON n.MaPB = p.MaPB "
+                + "LEFT JOIN ChucVu c ON n.MaCV = c.MaCV ORDER BY n.MaNV";
 
         try (Connection conn = DBHelper.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -35,12 +37,47 @@ public class NhanVienDAL {
                 nv.setHeSoLuong(rs.getDouble("HeSoLuong"));
                 nv.setNgayVaoLam(rs.getDate("NgayVaoLam"));
                 nv.setTrangThai(rs.getString("TrangThai"));
+                nv.setTenPB(rs.getString("TenPB"));
+                nv.setTenCV(rs.getString("TenCV"));
                 list.add(nv);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể tải danh sách nhân viên.", e);
         }
         return list;
+    }
+
+    public NhanVien getById(String maNV) {
+        String sql = "SELECT n.*, p.TenPB, c.TenCV FROM NhanVien n "
+                + "LEFT JOIN PhongBan p ON n.MaPB = p.MaPB "
+                + "LEFT JOIN ChucVu c ON n.MaCV = c.MaCV WHERE n.MaNV = ?";
+        try (Connection conn = DBHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, maNV);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                NhanVien nv = new NhanVien();
+                nv.setMaNV(rs.getString("MaNV"));
+                nv.setHoTen(rs.getString("HoTen"));
+                nv.setGioiTinh(rs.getString("GioiTinh"));
+                nv.setNgaySinh(rs.getDate("NgaySinh"));
+                nv.setSoDienThoai(rs.getString("SoDienThoai"));
+                nv.setEmail(rs.getString("Email"));
+                nv.setDiaChi(rs.getString("DiaChi"));
+                nv.setMaPB(rs.getString("MaPB"));
+                nv.setMaCV(rs.getString("MaCV"));
+                nv.setHeSoLuong(rs.getDouble("HeSoLuong"));
+                nv.setNgayVaoLam(rs.getDate("NgayVaoLam"));
+                nv.setTrangThai(rs.getString("TrangThai"));
+                nv.setTenPB(rs.getString("TenPB"));
+                nv.setTenCV(rs.getString("TenCV"));
+                return nv;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể tải hồ sơ nhân viên.", e);
+        }
     }
 
     // Thêm nhân viên mới
@@ -64,9 +101,8 @@ public class NhanVienDAL {
 
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể thêm nhân viên.", e);
         }
-        return false;
     }
 
     // Cập nhật thông tin nhân viên
@@ -90,22 +126,20 @@ public class NhanVienDAL {
 
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể cập nhật nhân viên.", e);
         }
-        return false;
     }
 
     // Xóa nhân viên (thực tế nên dùng xóa mềm bằng cách đổi TrangThai='Nghỉ việc')
     public boolean delete(String maNV) {
-        String sql = "DELETE FROM NhanVien WHERE MaNV=?";
+        String sql = "UPDATE NhanVien SET TrangThai = 'Nghỉ việc' WHERE MaNV=?";
         try (Connection conn = DBHelper.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, maNV);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể chuyển nhân viên sang trạng thái nghỉ việc.", e);
         }
-        return false;
     }
 }

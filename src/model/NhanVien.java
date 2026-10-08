@@ -15,6 +15,8 @@ public class NhanVien {
     private double heSoLuong;
     private Date ngayVaoLam;
     private String trangThai;
+    private String tenPB;
+    private String tenCV;
 
     public NhanVien() {}
 
@@ -70,6 +72,12 @@ public class NhanVien {
 
     public String getTrangThai() { return trangThai; }
     public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
+
+    public String getTenPB() { return tenPB; }
+    public void setTenPB(String tenPB) { this.tenPB = tenPB; }
+
+    public String getTenCV() { return tenCV; }
+    public void setTenCV(String tenCV) { this.tenCV = tenCV; }
     
     @Override
     public String toString() { return hoTen + " (" + maNV + ")"; }

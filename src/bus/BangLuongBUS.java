@@ -8,6 +8,7 @@ import model.BangLuong;
 import model.ChucVu;
 import model.NhanVien;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BangLuongBUS {
@@ -24,22 +25,34 @@ public class BangLuongBUS {
     }
 
     public List<BangLuong> getByMonth(int month, int year) {
+        if (month < 1 || month > 12 || year < 2000 || year > 2100) {
+            throw new IllegalArgumentException("Tháng hoặc năm xem bảng lương không hợp lệ.");
+        }
         return bangLuongDAL.getByMonth(month, year);
     }
 
+    public List<BangLuong> getByMonthForEmployee(int month, int year, String maNV) {
+        if (month < 1 || month > 12 || year < 2000 || year > 2100
+                || maNV == null || maNV.trim().isEmpty()) {
+            throw new IllegalArgumentException("Kỳ lương hoặc mã nhân viên không hợp lệ.");
+        }
+        return bangLuongDAL.getByMonthAndEmployee(month, year, maNV.trim());
+    }
+
     public void calculateSalaryForMonth(int month, int year) {
+        if (month < 1 || month > 12 || year < 2000 || year > 2100) {
+            throw new IllegalArgumentException("Tháng hoặc năm tính lương không hợp lệ.");
+        }
         List<NhanVien> dsNhanVien = nhanVienDAL.getAll();
         List<ChucVu> dsChucVu = chucVuDAL.getAll();
-        
-        final double MUC_LUONG_CO_SO = 5000000; // 5 triệu VND
-        final double LUONG_1_NGAY_CO_SO = MUC_LUONG_CO_SO / 22.0;
-        
+        List<BangLuong> salaries = new ArrayList<>();
+
         for (NhanVien nv : dsNhanVien) {
-            // Lấy số ngày làm việc thực tế
+            if (!"Đang làm việc".equals(nv.getTrangThai())) {
+                continue;
+            }
             int ngayCong = chamCongDAL.getTotalWorkDays(nv.getMaNV(), month, year);
-            if (ngayCong == 0) continue; // Không có ngày công thì không tính lương
-            
-            // Tìm phụ cấp chức vụ
+
             double phuCap = 0;
             if (nv.getMaCV() != null) {
                 for (ChucVu cv : dsChucVu) {
@@ -49,25 +62,38 @@ public class BangLuongBUS {
                     }
                 }
             }
-            
-            double luongCoBan = LUONG_1_NGAY_CO_SO * nv.getHeSoLuong() * ngayCong;
-            double tienThuong = 0; // Giả sử thưởng
-            double tienPhat = 0;   // Giả sử phạt
-            double thucLanh = luongCoBan + phuCap + tienThuong - tienPhat;
-            
+
+            SalaryCalculator.Salary calculation =
+                    SalaryCalculator.calculate(nv.getHeSoLuong(), phuCap, ngayCong);
+            double luongCoBan = calculation.getBaseSalary();
+            double phuCapTheoCong = calculation.getAllowance();
+            double tienThuong = 0;
+            double tienPhat = 0;
+            double thucLanh = calculation.getNetPay() + tienThuong - tienPhat;
+
             BangLuong bl = new BangLuong();
             bl.setMaNV(nv.getMaNV());
             bl.setThang(month);
             bl.setNam(year);
             bl.setLuongCoBan(luongCoBan);
             bl.setSoNgayCong(ngayCong);
-            bl.setTongPhuCap(phuCap);
+            bl.setTongPhuCap(phuCapTheoCong);
             bl.setTienThuong(tienThuong);
             bl.setTienPhat(tienPhat);
             bl.setThucLanh(thucLanh);
             bl.setNgayTinhLuong(new java.sql.Date(System.currentTimeMillis()));
-            
-            bangLuongDAL.insertOrUpdate(bl);
+
+            salaries.add(bl);
+        }
+        try {
+            bangLuongDAL.insertOrUpdateAll(salaries);
+        } catch (IllegalStateException ex) {
+            throw new IllegalStateException("Lỗi khi lưu bảng lương kỳ " + month + "/" + year + ".", ex);
         }
     }
+
+    public List<Object[]> getDanhSachLuongCoBan() {
+        return bangLuongDAL.getDanhSachLuongCoBan();
+    }
+
 }

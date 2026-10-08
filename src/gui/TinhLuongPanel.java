@@ -1,186 +1,199 @@
 package gui;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.util.List;
 import bus.BangLuongBUS;
 import model.BangLuong;
 
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Locale;
+
 public class TinhLuongPanel extends JPanel {
-    private JTable table;
-    private DefaultTableModel tableModel;
+    private final BangLuongBUS bus = new BangLuongBUS();
+    private final JSpinner month = new JSpinner(new SpinnerNumberModel(LocalDate.now().getMonthValue(), 1, 12, 1));
+    private final JSpinner year = new JSpinner(new SpinnerNumberModel(LocalDate.now().getYear(), 2000, 2100, 1));
+    private final JLabel periodLabel = new JLabel();
+    private final JLabel totalLabel = new JLabel("Tổng thực lĩnh: 0 đ");
+    private final DefaultTableModel model = new DefaultTableModel(new String[]{
+            "MÃ NV", "HỌ VÀ TÊN", "PHÒNG BAN", "NGÀY CÔNG", "LƯƠNG CƠ BẢN",
+            "PHỤ CẤP CHỨC VỤ", "THƯỞNG", "KHẤU TRỪ", "THỰC LĨNH"
+    }, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+    private final JTable table = new JTable(model);
 
     public TinhLuongPanel() {
-        setLayout(new BorderLayout(10, 10));
-        setBackground(new Color(245, 245, 245));
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setLayout(new BorderLayout(0, 14));
+        setBackground(GuiStyle.BACKGROUND);
+        setBorder(BorderFactory.createEmptyBorder(22, 22, 22, 22));
 
-        // ================= 1. HEADER =================
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
-        
-        // Title & Top Actions
-        JPanel titleActionPanel = new JPanel();
-        titleActionPanel.setLayout(new BoxLayout(titleActionPanel, BoxLayout.X_AXIS));
-        titleActionPanel.setOpaque(false);
-        
-        JLabel titleLabel = new JLabel("Bảng Tính Lương Tháng 05/2025");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        
-        JLabel subTitleLabel = new JLabel("<html><span style='color:#10B981'>●</span> Đang kiểm tra & rà soát</html>");
-        subTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        
-        titleActionPanel.add(titleLabel);
-        titleActionPanel.add(Box.createHorizontalStrut(15));
-        titleActionPanel.add(subTitleLabel);
-        titleActionPanel.add(Box.createHorizontalGlue());
-        
-        titleActionPanel.add(createOutlineBtn("Kiểm tra lỗi logic"));
-        titleActionPanel.add(Box.createHorizontalStrut(10));
-        titleActionPanel.add(createBtn("Chạy tính toán lại", new Color(13, 110, 253)));
-        titleActionPanel.add(Box.createHorizontalStrut(10));
-        titleActionPanel.add(createBtn("Khóa & Phê duyệt kỳ lương", new Color(25, 135, 84)));
+        JPanel header = new JPanel(new BorderLayout(8, 12));
+        header.setOpaque(false);
+        JLabel title = new JLabel("Tính lương hàng tháng");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 23));
+        title.setForeground(GuiStyle.TEXT);
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        controls.setOpaque(false);
+        JButton calculate = new JButton("Tính / cập nhật kỳ lương");
+        JButton reload = new JButton("Tải bảng lương đã lưu");
+        JButton export = new JButton("Xuất CSV");
+        JButton print = new JButton("In");
+        GuiStyle.styleButton(calculate, GuiStyle.GREEN);
+        GuiStyle.styleButton(reload, GuiStyle.BLUE);
+        GuiStyle.styleButton(export, new Color(102, 119, 140));
+        GuiStyle.styleButton(print, new Color(102, 119, 140));
+        controls.add(new JLabel("Tháng:"));
+        controls.add(month);
+        controls.add(new JLabel("Năm:"));
+        controls.add(year);
+        controls.add(calculate);
+        controls.add(reload);
+        controls.add(export);
+        controls.add(print);
+        header.add(controls, BorderLayout.NORTH);
+        header.add(title, BorderLayout.CENTER);
+        JPanel info = new JPanel(new BorderLayout(10, 0));
+        info.setOpaque(false);
+        periodLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        periodLabel.setForeground(GuiStyle.MUTED);
+        totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        totalLabel.setForeground(GuiStyle.BLUE);
+        info.add(periodLabel, BorderLayout.WEST);
+        info.add(totalLabel, BorderLayout.EAST);
+        header.add(info, BorderLayout.SOUTH);
+        add(header, BorderLayout.NORTH);
 
-        headerPanel.add(titleActionPanel, BorderLayout.NORTH);
-
-        // Summary Cards
-        JPanel cardsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
-        cardsPanel.setOpaque(false);
-        cardsPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
-        cardsPanel.add(createSummaryCard("TỔNG THỰC CHI (NET PAY)", "21,385,400,000 đ", "Quy mô 1,248 nhân sự", true));
-        cardsPanel.add(createSummaryCard("TỔNG LƯƠNG GỘP (GROSS)", "26,230,000,000 đ", "Thuế & BH: 18.47%", false));
-        cardsPanel.add(createSummaryCard("TIỀN THÊM GIỜ (OT)", "685,200,000 đ", "Tổng số giờ: 1480.5", true));
-        cardsPanel.add(createSummaryCard("THƯỞNG HIỆU SUẤT & KPI", "1,240,000,000 đ", "Đạt mốc KPI công ty: 96.8%", true));
-        headerPanel.add(cardsPanel, BorderLayout.CENTER);
-
-        // Toolbar
-        JPanel toolbarPanel = new JPanel();
-        toolbarPanel.setLayout(new BoxLayout(toolbarPanel, BoxLayout.X_AXIS));
-        toolbarPanel.setOpaque(false);
-        
-        JPanel filterTabs = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        filterTabs.setOpaque(false);
-        filterTabs.add(createFilterBtn("Tìm theo tên NV, mã NV... [Ctrl+F]", false));
-        filterTabs.add(createFilterBtn("Tất cả phòng ban (7)", true));
-        
-        JPanel bulkActionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bulkActionPanel.setOpaque(false);
-        bulkActionPanel.add(createOutlineBtn("Xuất Excel"));
-
-        toolbarPanel.add(filterTabs);
-        toolbarPanel.add(Box.createHorizontalGlue());
-        toolbarPanel.add(bulkActionPanel);
-        
-        headerPanel.add(toolbarPanel, BorderLayout.SOUTH);
-        add(headerPanel, BorderLayout.NORTH);
-
-        // ================= 2. TABLE =================
-        String[] columns = {"MÃ NV", "HỌ VÀ TÊN", "PHÒNG BAN", "LƯƠNG GROSS", "CÔNG THỰC TẾ", "LƯƠNG THỜI GIAN", "PHỤ CẤP & KPI", "LÀM THÊM (OT)", "TỔNG THU NHẬP"};
-        tableModel = new DefaultTableModel(columns, 0);
-        table = new JTable(tableModel);
-        
-        table.setRowHeight(50); 
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
-        table.getTableHeader().setBackground(Color.WHITE);
-        table.getTableHeader().setPreferredSize(new Dimension(100, 40));
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.setShowVerticalLines(false);
-        table.setGridColor(new Color(230, 230, 230));
-
+        GuiStyle.styleTable(table);
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230)));
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(229, 234, 241)));
         scrollPane.getViewport().setBackground(Color.WHITE);
         add(scrollPane, BorderLayout.CENTER);
-
-        loadDataFromDB(9, 2026);
+        calculate.addActionListener(e -> calculate());
+        reload.addActionListener(e -> loadSaved());
+        export.addActionListener(e -> exportCsv());
+        print.addActionListener(e -> printTable());
+        updatePeriodLabel();
+        loadSaved();
     }
 
-    private JButton createBtn(String text, Color bg) {
-        JButton btn = new JButton(text);
-        btn.setBackground(bg);
-        btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
+    private int selectedMonth() {
+        return (Integer) month.getValue();
     }
 
-    private JButton createOutlineBtn(String text) {
-        JButton btn = new JButton(text);
-        btn.setBackground(Color.WHITE);
-        btn.setForeground(Color.DARK_GRAY);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
+    private int selectedYear() {
+        return (Integer) year.getValue();
     }
 
-    private JButton createFilterBtn(String text, boolean active) {
-        JButton btn = new JButton(text);
-        btn.setBackground(active ? new Color(230, 240, 255) : Color.WHITE);
-        btn.setForeground(active ? new Color(13, 110, 253) : Color.DARK_GRAY);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
-        return btn;
-    }
-
-    private JPanel createSummaryCard(String title, String value, String subText, boolean success) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(230, 230, 230)),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
-        
-        JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 10));
-        lblTitle.setForeground(new Color(100, 100, 100));
-        
-        JLabel lblValue = new JLabel(value);
-        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        
-        JLabel lblSub = new JLabel(subText);
-        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        if (success) lblSub.setForeground(new Color(40, 167, 69));
-        
-        panel.add(lblTitle);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(lblValue);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(lblSub);
-        return panel;
-    }
-
-    private void loadDataFromDB(int month, int year) {
-        BangLuongBUS bus = new BangLuongBUS();
-        
-        // Tự động tính lương cho toàn bộ nhân viên trong tháng
-        bus.calculateSalaryForMonth(month, year);
-        
-        // Lấy danh sách kết quả
-        List<BangLuong> list = bus.getByMonth(month, year);
-        
-        tableModel.setRowCount(0);
-        java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
-        
-        for (BangLuong bl : list) {
-            tableModel.addRow(new Object[]{
-                bl.getMaNV(),
-                bl.getHoTen(),
-                bl.getTenPB(),
-                df.format(bl.getLuongCoBan()), // MỨC LƯƠNG
-                bl.getSoNgayCong(), // NGÀY CÔNG
-                df.format(bl.getLuongCoBan()), // LƯƠNG CHÍNH
-                df.format(bl.getTongPhuCap() + bl.getTienThuong()), // PHỤ CẤP / THƯỞNG
-                df.format(bl.getTienPhat()), // KHẤU TRỪ / PHẠT
-                df.format(bl.getThucLanh()) // THỰC LÃNH
-            });
+    private void calculate() {
+        int selectedMonth = selectedMonth();
+        int selectedYear = selectedYear();
+        int answer = JOptionPane.showConfirmDialog(this,
+                "Tính lại sẽ ghi đè bảng lương đã lưu của kỳ " + selectedMonth + "/" + selectedYear + ". Tiếp tục?",
+                "Xác nhận tính lương", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (answer != JOptionPane.YES_OPTION) return;
+        try {
+            bus.calculateSalaryForMonth(selectedMonth, selectedYear);
+            loadSaved();
+            JOptionPane.showMessageDialog(this, "Đã tính và lưu lương kỳ " + selectedMonth + "/" + selectedYear + ".");
+        } catch (RuntimeException ex) {
+            showError(ex);
         }
+    }
+
+    private void loadSaved() {
+        int selectedMonth = selectedMonth();
+        int selectedYear = selectedYear();
+        updatePeriodLabel();
+        try {
+            List<BangLuong> rows = bus.getByMonth(selectedMonth, selectedYear);
+            model.setRowCount(0);
+            double total = 0;
+            for (BangLuong salary : rows) {
+                total += salary.getThucLanh();
+                model.addRow(new Object[]{
+                        salary.getMaNV(), salary.getHoTen(), salary.getTenPB(), salary.getSoNgayCong(),
+                        money(salary.getLuongCoBan()), money(salary.getTongPhuCap()),
+                        money(salary.getTienThuong()), money(salary.getTienPhat()), money(salary.getThucLanh())
+                });
+            }
+            totalLabel.setText("Tổng thực lĩnh: " + money(total));
+        } catch (RuntimeException ex) {
+            model.setRowCount(0);
+            totalLabel.setText("Không tải được dữ liệu");
+            showError(ex);
+        }
+    }
+
+    private void updatePeriodLabel() {
+        periodLabel.setText("Bảng lương tháng " + selectedMonth() + "/" + selectedYear()
+                + "  |  Lương ngày = 5.000.000 × hệ số / 22");
+    }
+
+    private String money(double amount) {
+        return NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN")).format(Math.round(amount)) + " đ";
+    }
+
+    private void exportCsv() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new File("bang-luong-" + selectedMonth() + "-" + selectedYear() + ".csv"));
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File file = chooser.getSelectedFile();
+        if (!file.getName().toLowerCase(Locale.ROOT).endsWith(".csv")) {
+            file = new File(file.getParentFile(), file.getName() + ".csv");
+        }
+        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
+            writer.write('\ufeff');
+            writeCsvRow(writer, headers());
+            for (int row = 0; row < model.getRowCount(); row++) {
+                Object[] values = new Object[model.getColumnCount()];
+                for (int column = 0; column < values.length; column++) {
+                    values[column] = model.getValueAt(row, column);
+                }
+                writeCsvRow(writer, values);
+            }
+            JOptionPane.showMessageDialog(this, "Đã xuất: " + file.getAbsolutePath());
+        } catch (Exception ex) {
+            showError(new IllegalStateException("Không thể xuất bảng lương.", ex));
+        }
+    }
+
+    private Object[] headers() {
+        Object[] values = new Object[model.getColumnCount()];
+        for (int column = 0; column < values.length; column++) values[column] = model.getColumnName(column);
+        return values;
+    }
+
+    private void writeCsvRow(BufferedWriter writer, Object[] values) throws java.io.IOException {
+        for (int column = 0; column < values.length; column++) {
+            if (column > 0) writer.write(';');
+            writer.write('"');
+            writer.write(String.valueOf(values[column] == null ? "" : values[column]).replace("\"", "\"\""));
+            writer.write('"');
+        }
+        writer.newLine();
+    }
+
+    private void printTable() {
+        try {
+            table.print(JTable.PrintMode.FIT_WIDTH,
+                    new java.text.MessageFormat("BẢNG LƯƠNG THÁNG " + selectedMonth() + "/" + selectedYear()),
+                    new java.text.MessageFormat("Trang {0}"));
+        } catch (java.awt.print.PrinterException ex) {
+            showError(new IllegalStateException("Không thể in bảng lương.", ex));
+        }
+    }
+
+    private void showError(RuntimeException ex) {
+        JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 }
