@@ -2,18 +2,24 @@ package gui;
 
 import bus.TaiKhoanBUS;
 import model.TaiKhoan;
+import utils.DBHelper;
+import utils.DatabaseInitializer;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.concurrent.ExecutionException;
 
 public class LoginFrame extends JFrame {
     private JTextField txtUsername;
     private JPasswordField txtPassword;
     private JButton btnLogin;
+    private JLabel lblStatus;
     private TaiKhoanBUS taiKhoanBUS;
+    private boolean databaseReady;
+    private boolean loginInProgress;
 
     public LoginFrame() {
         taiKhoanBUS = new TaiKhoanBUS();
@@ -88,6 +94,12 @@ public class LoginFrame extends JFrame {
         btnLogin.setPreferredSize(new Dimension(350, 45));
         btnLogin.setFocusPainted(false);
         btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnLogin.setEnabled(false);
+
+        lblStatus = new JLabel("Đang chuẩn bị kết nối cơ sở dữ liệu...");
+        lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblStatus.setForeground(new Color(100, 116, 139));
+        lblStatus.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         formPanel.add(lblUser, gbc);
         
@@ -106,6 +118,10 @@ public class LoginFrame extends JFrame {
         gbc.gridy++;
         gbc.insets = new Insets(0, 0, 0, 0);
         formPanel.add(btnLogin, gbc);
+
+        gbc.gridy++;
+        gbc.insets = new Insets(12, 0, 0, 0);
+        formPanel.add(lblStatus, gbc);
 
         // ==========================================
         // ASSEMBLE
@@ -135,9 +151,13 @@ public class LoginFrame extends JFrame {
         };
         txtUsername.addKeyListener(enterAdapter);
         txtPassword.addKeyListener(enterAdapter);
+        SwingUtilities.invokeLater(this::initializeDatabaseAsync);
     }
 
     private void performLogin() {
+        if (!databaseReady || loginInProgress) {
+            return;
+        }
         String user = txtUsername.getText();
         String pass = new String(txtPassword.getPassword());
 
@@ -146,14 +166,93 @@ public class LoginFrame extends JFrame {
             return;
         }
 
-        TaiKhoan tk = taiKhoanBUS.login(user, pass);
-        if (tk != null) {
-            this.dispose(); 
-            MainFrame mainFrame = new MainFrame(tk);
-            mainFrame.setVisible(true);
-        } else {
-            JOptionPane.showMessageDialog(this, "Tên đăng nhập hoặc mật khẩu không chính xác!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
+        loginInProgress = true;
+        btnLogin.setEnabled(false);
+        lblStatus.setText("Đang xác thực tài khoản...");
+        new SwingWorker<TaiKhoan, Void>() {
+            @Override
+            protected TaiKhoan doInBackground() {
+                return taiKhoanBUS.login(user, pass);
+            }
+
+            @Override
+            protected void done() {
+                loginInProgress = false;
+                btnLogin.setEnabled(true);
+                lblStatus.setText("Sẵn sàng đăng nhập.");
+                try {
+                    TaiKhoan account = get();
+                    if (account == null) {
+                        JOptionPane.showMessageDialog(LoginFrame.this,
+                                "Tên đăng nhập hoặc mật khẩu không chính xác!",
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    dispose();
+                    MainFrame mainFrame = new MainFrame(account);
+                    mainFrame.setVisible(true);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    showLoginError(ex);
+                } catch (ExecutionException ex) {
+                    showLoginError(ex.getCause());
+                }
+            }
+        }.execute();
+    }
+
+    private void showLoginError(Throwable error) {
+        lblStatus.setText("Không thể xác thực. Kiểm tra cấu hình và thử lại.");
+        JOptionPane.showMessageDialog(this,
+                "Không thể đăng nhập do lỗi cơ sở dữ liệu hoặc xác thực.\n\n"
+                        + error.getMessage(),
+                "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+        error.printStackTrace();
+    }
+
+    private void initializeDatabaseAsync() {
+        btnLogin.setEnabled(false);
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                if (DBHelper.isDemoProfile()) {
+                    DatabaseInitializer.initialize();
+                } else {
+                    try (java.sql.Connection connection = DBHelper.getConnection()) {
+                        if (!connection.isValid(5)) {
+                            throw new IllegalStateException("Kết nối MySQL không hợp lệ.");
+                        }
+                    } catch (java.sql.SQLException ex) {
+                        throw new IllegalStateException("Không thể kiểm tra kết nối production.", ex);
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    databaseReady = true;
+                    btnLogin.setEnabled(true);
+                    lblStatus.setText("Cơ sở dữ liệu sẵn sàng.");
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    showDatabaseError(ex);
+                } catch (ExecutionException ex) {
+                    showDatabaseError(ex.getCause());
+                }
+            }
+        }.execute();
+    }
+
+    private void showDatabaseError(Throwable error) {
+        lblStatus.setText("Không thể kết nối cơ sở dữ liệu.");
+        JOptionPane.showMessageDialog(this,
+                "Không thể chuẩn bị kết nối cơ sở dữ liệu. Kiểm tra MySQL và HR_DB_*.\n\n"
+                        + error.getMessage(),
+                "Lỗi cơ sở dữ liệu", JOptionPane.ERROR_MESSAGE);
+        error.printStackTrace();
     }
 
     public static void main(String[] args) {
@@ -162,9 +261,10 @@ public class LoginFrame extends JFrame {
         } catch (Exception ex) {
             System.err.println("Lưu ý: Không tìm thấy thư viện FlatLaf.");
         }
-        
+
         SwingUtilities.invokeLater(() -> {
-            new LoginFrame().setVisible(true);
+            LoginFrame loginFrame = new LoginFrame();
+            loginFrame.setVisible(true);
         });
     }
 }

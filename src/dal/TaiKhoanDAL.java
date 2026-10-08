@@ -29,7 +29,7 @@ public class TaiKhoanDAL {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể tra cứu tài khoản.", e);
         }
         return tk;
     }
@@ -52,7 +52,7 @@ public class TaiKhoanDAL {
                 list.add(tk);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể tải danh sách tài khoản.", e);
         }
         return list;
     }
@@ -69,9 +69,8 @@ public class TaiKhoanDAL {
             return pstmt.executeUpdate() > 0;
             
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể tạo tài khoản.", e);
         }
-        return false;
     }
 
     public boolean update(TaiKhoan tk) {
@@ -86,9 +85,21 @@ public class TaiKhoanDAL {
             return pstmt.executeUpdate() > 0;
             
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể cập nhật tài khoản.", e);
         }
-        return false;
+    }
+
+    public boolean updatePassword(String username, String passwordHash) {
+        String sql = "UPDATE TaiKhoan SET MatKhau = ? WHERE TenDangNhap = ?";
+        try (Connection conn = DBHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, passwordHash);
+            pstmt.setString(2, username);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Không thể cập nhật mật khẩu tài khoản.", e);
+        }
     }
 
     public boolean delete(String username) {
@@ -100,8 +111,7 @@ public class TaiKhoanDAL {
             return pstmt.executeUpdate() > 0;
             
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không thể xóa tài khoản.", e);
         }
-        return false;
     }
 }
